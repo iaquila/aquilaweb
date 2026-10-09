@@ -56,6 +56,11 @@
   * Deployment Pipeline Cleanup: Removed redundant `.github/workflows/deploy.yml` (GitHub Pages) in favor of the production-targeted cPanel FTP deployment pipeline (`.github/workflows/deploy-cpanel.yml`).
 
   * Field Agent & Polling Unit Agent Dashboard Streamlining: Removed AI Projection engine and tactical Heat Map from the Dashboard view for `FIELD_AGENT` and `POLLING_AGENT` (`!isOfficerOrAbove`), making Candidate Snapshot Performance span full-width and keeping executive simulation and geospatial maps reserved for Election Officers and above.
+  * Election Officer Dashboard Reorganization:
+    - Removed `Status ACTIVE` and `LIVE COLLATION` badges from the station console header for Election Officers, eliminating dead space.
+    - Moved Candidate Snapshot Performance horizontally into the header row across 4 candidate cards with candidate selection wiring for AI projection.
+    - Repositioned the Compact Tactical Heat Map and AI Election Projection Engine side-by-side in a 2-column grid (`grid grid-cols-1 lg:grid-cols-2`), cutting the Heat Map width to 50% on desktop as specified in the architectural sketch.
+    - Aligned candidate name and party representation across both Snapshot Performance and AI Projection to `{fullName} ({partyAcronym})`.
 
 ## Verification Status
 Staff Invariant Audit: INVARIANTS VERIFIED
