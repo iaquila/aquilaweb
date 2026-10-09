@@ -716,25 +716,6 @@ export const DashboardView: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* Swing Delta + Leading Margin */}
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="bg-[#0E1712] rounded-xl p-3">
-                      <span className="text-[9px] font-bold uppercase tracking-wider text-[#718579] block mb-1">
-                        SWING DELTA
-                      </span>
-                      <span className="text-xs font-bold text-amber-400">
-                        {projection.swingDelta}
-                      </span>
-                    </div>
-                    <div className="bg-[#0E1712] rounded-xl p-3">
-                      <span className="text-[9px] font-bold uppercase tracking-wider text-[#718579] block mb-1">
-                        PROJECTED MARGIN
-                      </span>
-                      <span className="text-xs font-bold text-white leading-tight block">
-                        {projection.leadingMargin}
-                      </span>
-                    </div>
-                  </div>
 
                   {/* Secondary Model Insight */}
                   <div className="p-3 rounded-lg bg-[#10B981]/[0.06] border border-[#10B981]/15 text-[11px] text-[#94A89D] leading-relaxed flex-1">
