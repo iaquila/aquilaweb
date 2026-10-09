@@ -304,67 +304,67 @@ export const DashboardView: React.FC = () => {
       ) : (
         /* Field Agent / Polling Agent Station Console Header */
         <div className="w-full rounded-xl border border-[#1C2E24] bg-[#0D6338]/[0.05] p-3 sm:p-3.5 lg:p-4 shadow-md backdrop-blur-sm">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-start gap-3 sm:gap-6 lg:gap-8 flex-wrap sm:flex-nowrap">
-            <div className="flex items-center justify-between sm:justify-start gap-3">
-              <div>
-                <div className="flex items-center gap-1.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#10B981] animate-pulse" />
-                  <span className="text-[10px] sm:text-[11px] font-extrabold tracking-wider text-[#10B981]">
-                    {(user?.organizationName ?? 'iAQUILA Situation Room HQ').replace(/i?aquila/gi, 'iAQUILA')}
-                  </span>
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 sm:gap-4">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-5 flex-shrink-0">
+              <div className="flex items-center justify-between sm:justify-start gap-3">
+                <div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#10B981] animate-pulse" />
+                    <span className="text-[10px] sm:text-[11px] font-extrabold tracking-wider text-[#10B981]">
+                      {(user?.organizationName ?? 'iAQUILA Situation Room HQ').replace(/i?aquila/gi, 'iAQUILA')}
+                    </span>
+                  </div>
+                  <h1 className="text-base sm:text-lg font-black text-white leading-tight mt-0.5 whitespace-nowrap">
+                    Presidential Collation
+                  </h1>
                 </div>
-                <h1 className="text-base sm:text-lg font-black text-white leading-tight mt-0.5 whitespace-nowrap">
-                  Presidential Collation
-                </h1>
               </div>
 
-              <div className="sm:hidden inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#10B981]/10 border border-[#10B981]/30">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#10B981] animate-ping" />
-                <span className="text-[10px] font-black uppercase tracking-wider text-[#10B981]">
-                  LIVE
-                </span>
+              <div className="hidden sm:block h-8 w-px bg-[#1C2E24]" />
+
+              <div className="flex items-center gap-3 sm:gap-4 pt-2.5 sm:pt-0 border-t sm:border-t-0 border-[#1C2E24]/60">
+                <div className="text-left sm:text-right">
+                  <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-[#718579] block leading-none">
+                    Reporting PUs
+                  </span>
+                  <span className="text-sm sm:text-base font-black text-white whitespace-nowrap">
+                    {(725 + pulseTick).toLocaleString()}
+                  </span>
+                </div>
+
+                <div className="h-6 w-px bg-[#1C2E24]" />
+
+                <div className="text-left sm:text-right">
+                  <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-[#718579] block leading-none">
+                    Total Tallied
+                  </span>
+                  <span className="text-sm sm:text-base font-black text-[#10B981] whitespace-nowrap">
+                    {grandTotalVotes.toLocaleString()}
+                  </span>
+                </div>
               </div>
             </div>
 
-            <div className="hidden sm:block h-8 w-px bg-[#1C2E24]" />
-
-            <div className="flex items-center justify-between sm:justify-start gap-2.5 sm:gap-5 pt-2.5 sm:pt-0 border-t sm:border-t-0 border-[#1C2E24]/60">
-              <div className="text-left sm:text-right">
-                <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-[#718579] block leading-none">
-                  Reporting PUs
-                </span>
-                <span className="text-sm sm:text-base font-black text-white whitespace-nowrap">
-                  {(725 + pulseTick).toLocaleString()}
-                </span>
-              </div>
-
-              <div className="h-6 w-px bg-[#1C2E24]" />
-
-              <div className="text-left sm:text-right">
-                <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-[#718579] block leading-none">
-                  Total Tallied
-                </span>
-                <span className="text-sm sm:text-base font-black text-[#10B981] whitespace-nowrap">
-                  {grandTotalVotes.toLocaleString()}
-                </span>
-              </div>
-
-              <div className="h-6 w-px bg-[#1C2E24]" />
-
-              <div className="text-left sm:text-right">
-                <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-[#718579] block leading-none">
-                  Status
-                </span>
-                <span className="text-sm sm:text-base font-black text-amber-400">
-                  ACTIVE
-                </span>
-              </div>
-
-              <div className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#10B981]/10 border border-[#10B981]/30 ml-2 whitespace-nowrap">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#10B981] animate-ping" />
-                <span className="text-[10px] font-black uppercase tracking-wider text-[#10B981]">
-                  LIVE COLLATION
-                </span>
+            {/* Right: Field Deployment Scope */}
+            <div className="hidden lg:flex items-center gap-3 pt-2 lg:pt-0 border-t lg:border-t-0 border-[#1C2E24]/60">
+              <div className="h-8 w-px bg-[#1C2E24]" />
+              <div className="flex items-center gap-2.5 px-3 py-1.5 rounded-lg bg-[#070C09]/80 border border-[#1C2E24]">
+                <div className="w-2 h-2 rounded-full bg-[#10B981] animate-pulse" />
+                <div className="text-left">
+                  <div className="text-[9px] font-bold uppercase tracking-wider text-[#718579]">
+                    Assigned Scope
+                  </div>
+                  <div className="text-xs font-bold text-white flex items-center gap-1.5">
+                    <span>
+                      {user?.role === 'POLLING_AGENT'
+                        ? (activePus[0]?.code ? `${activePus[0].code} · Ikeja` : 'PU 003 · Ikeja')
+                        : 'Lagos West · Ikeja Sector'}
+                    </span>
+                    <span className="text-[9px] font-semibold text-[#10B981] px-1.5 py-0.5 rounded bg-[#10B981]/10">
+                      {user?.role === 'POLLING_AGENT' ? 'PU' : 'Cluster'}
+                    </span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -382,27 +382,54 @@ export const DashboardView: React.FC = () => {
               setDraftsQueueOpen(true);
             }
           }}
-          className="cursor-pointer rounded-2xl border border-amber-500/50 bg-amber-950/30 p-3.5 sm:p-4 shadow-md hover:bg-amber-950/40 transition flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+          className="cursor-pointer rounded-2xl border border-amber-500/50 bg-amber-950/30 p-3.5 sm:p-4 shadow-md hover:bg-amber-950/40 transition flex flex-col md:flex-row md:items-center justify-between gap-3 sm:gap-4"
         >
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 min-w-0">
             <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-amber-500/20 flex items-center justify-center text-amber-400 flex-shrink-0">
               <FileText className="w-5 h-5" />
             </div>
-            <div>
-              <p className="text-sm font-bold text-white flex items-center gap-2">
+            <div className="min-w-0">
+              <p className="text-sm font-bold text-white flex items-center gap-2 flex-wrap">
                 <span>{draftSubmissions.length} Pending Result Draft{draftSubmissions.length > 1 ? 's' : ''}</span>
                 <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">
                   ACTION REQUIRED
                 </span>
               </p>
-              <p className="text-xs text-[#94A89D]">
+              <p className="text-xs text-[#94A89D] truncate sm:whitespace-normal">
                 {draftSubmissions.length === 1
                   ? `${draftSubmissions[0].pollingUnitName} — Saved offline. Click to resume editing or publish.`
                   : 'You have saved drafts awaiting review and final publication.'}
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-2 flex-shrink-0 self-end sm:self-auto">
+
+          {/* Center: Quick Telemetry Chips for Primary Draft (Eliminates dead void) */}
+          {draftSubmissions.length === 1 && (
+            <div className="hidden lg:flex items-center gap-3 px-3 py-1.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-xs flex-shrink-0">
+              <div className="text-left">
+                <span className="text-[9px] font-bold uppercase tracking-wider text-amber-300/70 block leading-none">Tallied</span>
+                <span className="font-mono font-bold text-amber-200">
+                  {draftSubmissions[0].totalVotesCast.toLocaleString()} votes
+                </span>
+              </div>
+              <div className="h-5 w-px bg-amber-500/30" />
+              <div className="text-left">
+                <span className="text-[9px] font-bold uppercase tracking-wider text-amber-300/70 block leading-none">Accredited</span>
+                <span className="font-mono font-bold text-white">
+                  {draftSubmissions[0].totalAccreditedVoters.toLocaleString()}
+                </span>
+              </div>
+              <div className="h-5 w-px bg-amber-500/30" />
+              <div className="text-left">
+                <span className="text-[9px] font-bold uppercase tracking-wider text-amber-300/70 block leading-none">Form EC8A</span>
+                <span className="text-[10px] font-bold text-[#10B981]">
+                  {draftSubmissions[0].evidencePhotoUrl ? 'Photo Attached' : 'Pending Upload'}
+                </span>
+              </div>
+            </div>
+          )}
+
+          <div className="flex items-center gap-2 flex-shrink-0 self-end md:self-auto">
             <button
               onClick={(e) => {
                 e.stopPropagation();
@@ -805,14 +832,10 @@ export const DashboardView: React.FC = () => {
                     <div className="grid grid-cols-3 gap-2 p-2.5 rounded-lg bg-[#0E1712] border border-[#1C2E24] text-center">
                       <div>
                         <span className="text-[9px] uppercase tracking-wider text-[#718579] font-bold block">
-                          Turnout
+                          Votes Cast
                         </span>
                         <span className="text-xs font-bold text-emerald-400 font-mono">
-                          {isDraft
-                            ? `${pu.votes} Cast`
-                            : pu.accredited > 0
-                            ? `${((pu.votes / pu.accredited) * 100).toFixed(1)}%`
-                            : '0%'}
+                          {pu.votes.toLocaleString()}
                         </span>
                       </div>
                       <div className="border-x border-[#1C2E24]">

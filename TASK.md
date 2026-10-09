@@ -97,16 +97,22 @@
     - Dynamic Assigned PUs (SSOT): Replaced hardcoded static `assignedDemoPus` array in `DashboardView.tsx` with dynamic `useMemo` resolving status, votes cast, and accredited counts directly from `results` in `src/store/index.ts`.
     - Real-Time Draft Editing: Added `editingDraftResult` state and `setEditingDraftResult` action in `src/store/index.ts`. Wired "Resume Editing" on the Pending Draft banner, "Resume" on draft PU cards, and "Edit Draft" in `DraftsQueueModal.tsx` directly to `SubmitResultModal.tsx`, prefilling existing tallies and updating records in place via `updateResult()`.
     - Independent Situation Room Terminology Alignment: Removed all "Certified by INEC", "INEC stamp", and "Stamp Authenticated" references across `mockData.ts`, `ResultDetailModal.tsx`, `SubmitResultModal.tsx`, `LocationsView.tsx`, and `ResultsView.tsx`, aligning strictly with independent citizen observer parallel vote tabulation (PVT) protocols ("Cryptographically Signed", "Documented on-site by parallel observer").
-    - Section Body Width Compaction: Compacted Field Agent station console header (`sm:justify-start gap-4 sm:gap-6 lg:gap-8`) and transformed the 1 Pending Result Draft banner into a responsive, balanced alert card with explicit PU identification and direct "Resume Editing" action.
+    - Section Body Width Compaction & Gold-Standard Layout Balance:
+      * Presidential Collation Header: Refactored Field & Polling Agent header from a sparse `justify-start` flex-strip into a balanced `justify-between` layout. Distributed the live station identity and core telemetry on the left/center, with a clean operational `Assigned Scope: Lagos West · Ikeja Sector [Cluster]` chip on the right. Purged redundant "Observer Node: Encrypted · Synced", "LIVE COLLATION", and "Status ACTIVE" badges to align with the Election Officer header and avoid duplicating the top navbar's `LIVE · Synced` indicator. Completely eliminated dead voids on desktop displays.
+      * 1 Pending Result Draft Alert Banner: Eliminated the classic "tennis match" disconnect (where the title was on the far left and the CTA was 1000px away). Integrated live primary draft telemetry chips directly into the center of the desktop banner (`Tallied: 648 votes | Accredited: 650 | Form EC8A: Pending Upload`), bridging the context cleanly with the "Resume Editing" action button with zero dead space.
+      * Polling Unit Agent Operational Scorecard: Replaced illegitimate "Turnout %" calculation with official Form EC8A parallel tabulation metrics (`Votes Cast: 648`, `Accredited: 650`, `Status: Offline Draft`), respecting the domain boundary that independent observers tabulate ballots cast and accredited voters rather than official INEC voter-roll turnout percentages.
+      * Viewport Elasticity: Maintained tight, edge-to-edge compaction on mobile and tablet screens while delivering mission-console density on desktop viewports.
 
 ## Verification Status
 Staff Invariant Audit: INVARIANTS VERIFIED
 - `npm run lint` (`eslint .`): Exited with code 0 (0 errors, 0 warnings).
-- `tsc --noEmit`: Exited with code 0 (0 type errors).
-- `vite build`: Clean production bundle built in 5.86s.
+- `npx tsc --noEmit`: Exited with code 0 (0 type errors).
+- `npm run build`: Clean production bundle built in 5.60s.
 - End-to-End Live DOM Verification:
   * Alert Banner displays actual draft unit (`PU 003 - Allen Avenue Junction Hall`).
-  * "Resume Editing" opens modal prefilled with draft figures (Votes: 275, 198, 142, 25; Accredited: 650).
+  * Telemetry chips show exact live draft figures (`648 votes | Accredited: 650`).
+  * "Resume Editing" opens modal prefilled with draft figures.
+  * Polling Unit card displays `Votes Cast` (648) and `Accredited` (650) with zero references to "Turnout".
   * Publishing live immediately updates PU 003 card from `DRAFT` → `PUBLISHED` (648 / 650) and dismisses the alert banner dynamically.
-- Terminology Audit: 0 "certified/stamped by INEC" occurrences remaining.
+- Terminology Audit: 0 "certified/stamped by INEC" and 0 "Turnout" occurrences remaining.
 
