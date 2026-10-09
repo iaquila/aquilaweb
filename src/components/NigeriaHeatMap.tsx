@@ -2,7 +2,6 @@ import React, { useState, useMemo } from 'react';
 import {
   MapPin,
   ChevronRight,
-  ChevronDown,
   Sparkles,
   Globe,
   Flame,
@@ -240,8 +239,6 @@ export const NigeriaHeatMap: React.FC<NigeriaHeatMapProps> = ({
     isOpen: !!inspectModalUnit,
     onClose: () => setInspectModalUnit(null),
   });
-
-  const [showCompactDistrictGrid, setShowCompactDistrictGrid] = useState(false);
 
   // ---------------------------------------------------------------------------
   // Aggregate Comprehensive 37-State Baseline LGA Data (Official 774 Canonical LGAs)
@@ -1103,62 +1100,7 @@ export const NigeriaHeatMap: React.FC<NigeriaHeatMapProps> = ({
                 // Authentic National Federation 37-State Choropleth Layer
                 // -----------------------------------------------------------
                 <g key="state-layer">
-                  {/* Ambient Geopolitical Neighbor Annotations */}
-                  <text
-                    x={340}
-                    y={22}
-                    fill="#34D39944"
-                    fontSize="9"
-                    fontWeight="bold"
-                    textAnchor="middle"
-                    letterSpacing="3"
-                  >
-                    NIGER REPUBLIC
-                  </text>
-                  <text
-                    x={20}
-                    y={280}
-                    fill="#34D39944"
-                    fontSize="8"
-                    fontWeight="bold"
-                    textAnchor="middle"
-                    letterSpacing="2"
-                  >
-                    BENIN
-                  </text>
-                  <text
-                    x={636}
-                    y={70}
-                    fill="#34D39944"
-                    fontSize="8"
-                    fontWeight="bold"
-                    textAnchor="middle"
-                    letterSpacing="2"
-                  >
-                    CHAD
-                  </text>
-                  <text
-                    x={625}
-                    y={340}
-                    fill="#34D39944"
-                    fontSize="8"
-                    fontWeight="bold"
-                    textAnchor="middle"
-                    letterSpacing="2"
-                  >
-                    CAMEROON
-                  </text>
-                  <text
-                    x={140}
-                    y={544}
-                    fill="#38BDF844"
-                    fontSize="8"
-                    fontWeight="bold"
-                    textAnchor="middle"
-                    letterSpacing="2"
-                  >
-                    GULF OF GUINEA
-                  </text>
+
 
                   {/* Iconic River Niger & River Benue Confluence */}
                   <path
@@ -1222,8 +1164,8 @@ export const NigeriaHeatMap: React.FC<NigeriaHeatMapProps> = ({
                         onClick={() => {
                           setSelectedMapStateId(st.id);
                           setActiveLgaState(st.name);
+                          setInspectModalUnit(st);
                         }}
-                        onDoubleClick={() => setInspectModalUnit(st)}
                         onKeyDown={(e) => {
                           if (e.key === 'Enter' || e.key === ' ') {
                             e.preventDefault();
@@ -1236,7 +1178,7 @@ export const NigeriaHeatMap: React.FC<NigeriaHeatMapProps> = ({
                         onMouseLeave={() => setHoveredStateId(null)}
                         className="cursor-pointer transition-all duration-150 focus:outline-none"
                       >
-                        <title>{`${st.name} (${st.code}) - ${st.leadingParty}: ${st.leadingPct}% | ${st.reportingPct}% collated (Double-click to inspect)`}</title>
+                        <title>{`${st.name} (${st.code}) - ${st.leadingParty}: ${st.leadingPct}% | ${st.reportingPct}% collated`}</title>
 
                         {/* Outer Glow Halo for Selected State */}
                         {isSelected && (
@@ -1668,11 +1610,11 @@ export const NigeriaHeatMap: React.FC<NigeriaHeatMapProps> = ({
       </div>
 
       {/* --------------------------------------------------------------------- */}
-      {/* Dedicated Interactive LGA District Cards Grid (Under Map in LGA mode) */}
+      {/* Dedicated Interactive LGA District Cards Grid (Locations Full View Only) */}
       {/* --------------------------------------------------------------------- */}
-      {geoLevel === 'lga' && (
-        <div className="mt-4 pt-3 border-t border-[#1C2E24] space-y-3">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+      {!compact && geoLevel === 'lga' && (
+        <div className="mt-5 pt-4 border-t border-[#1C2E24] space-y-3">
+          <div className="flex items-center justify-between">
             <div>
               <h3 className="text-sm font-extrabold text-white flex items-center gap-2">
                 <MapPin className="w-4 h-4 text-emerald-400" />
@@ -1681,43 +1623,20 @@ export const NigeriaHeatMap: React.FC<NigeriaHeatMapProps> = ({
                 </span>
               </h3>
               <p className="text-xs text-[#718579]">
-                {compact
-                  ? 'Official canonical INEC LGAs. Select via dropdown or expand district cards.'
-                  : 'Tap any district card to view enlarged telemetry, party breakdown, or audit its polling units.'}
+                Tap any district card to view enlarged telemetry, party breakdown, or audit its polling units.
               </p>
             </div>
 
-            <div className="flex items-center gap-2 self-start sm:self-auto">
-              {compact && (
-                <button
-                  onClick={() => setShowCompactDistrictGrid(!showCompactDistrictGrid)}
-                  className="px-2.5 py-1 rounded-lg bg-[#14231B] border border-[#233B2C] text-xs font-bold text-emerald-400 hover:text-white flex items-center gap-1 transition"
-                >
-                  <span>
-                    {showCompactDistrictGrid
-                      ? 'Collapse Hubs'
-                      : `Expand Hubs (${mapLgas.length})`}
-                  </span>
-                  <ChevronDown
-                    className={`w-3.5 h-3.5 transition-transform duration-200 ${
-                      showCompactDistrictGrid ? 'rotate-180' : ''
-                    }`}
-                  />
-                </button>
-              )}
-              <button
-                onClick={() => handleAuditUnit(activeSelectedState)}
-                className="text-xs font-bold text-emerald-400 hover:text-emerald-300 flex items-center gap-1 transition"
-              >
-                <span>Audit All {effectiveLgaState} Units</span>
-                <ChevronRight className="w-3.5 h-3.5" />
-              </button>
-            </div>
+            <button
+              onClick={() => handleAuditUnit(activeSelectedState)}
+              className="text-xs font-bold text-emerald-400 hover:text-emerald-300 flex items-center gap-1 transition"
+            >
+              <span>Audit All {effectiveLgaState} Units</span>
+              <ChevronRight className="w-3.5 h-3.5" />
+            </button>
           </div>
 
-          {/* District Cards Grid: Always open in full view, conditionally in compact mode */}
-          {(!compact || showCompactDistrictGrid) && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 pt-1">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 pt-1">
               {mapLgas.map((lga) => {
                 const isSelected = selectedMapLgaId === lga.id;
                 const partyColor = PARTY_COLORS[lga.leadingParty];
@@ -1796,7 +1715,6 @@ export const NigeriaHeatMap: React.FC<NigeriaHeatMapProps> = ({
                 );
               })}
             </div>
-          )}
         </div>
       )}
 

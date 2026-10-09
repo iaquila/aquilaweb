@@ -465,7 +465,7 @@ export const DashboardView: React.FC = () => {
           </div>
 
           {/* AI Election Projection Engine */}
-          <div className="rounded-2xl border-2 border-[#10B981] bg-[#0E1712] p-5 shadow-xl flex flex-col justify-between space-y-4">
+          <div className="rounded-2xl border-2 border-[#10B981] bg-[#0E1712] p-5 shadow-xl flex flex-col gap-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div className="flex items-center gap-3">
                 <div className="w-9 h-9 rounded-xl bg-[#10B981] text-black flex items-center justify-center">
@@ -624,7 +624,6 @@ export const DashboardView: React.FC = () => {
               )}
             </div>
 
-            {/* AI Projection Output Metrics */}
             {projection && (
               <div className="rounded-xl border border-[#1C2E24] bg-[#070C09] p-4 space-y-3">
                 {/* Scope Banner */}
@@ -672,6 +671,94 @@ export const DashboardView: React.FC = () => {
                 </div>
               </div>
             )}
+
+            {/* AI Neural Simulation Intelligence — always fills remaining space */}
+            <div className="rounded-xl border border-[#1C2E24] bg-[#070C09] p-4 flex-1 flex flex-col justify-between space-y-3">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-[#718579]">
+                NEURAL SIMULATION INTELLIGENCE
+              </span>
+
+              {projection ? (
+                <>
+                  {/* Win Probability + Confidence row */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="bg-[#0E1712] rounded-xl p-3 space-y-1.5">
+                      <span className="text-[9px] font-bold uppercase tracking-wider text-[#718579] block">
+                        WIN PROBABILITY
+                      </span>
+                      <div className="flex items-baseline gap-1">
+                        <span className="text-xl font-black text-[#10B981]">
+                          {projection.winProbability}%
+                        </span>
+                      </div>
+                      <div className="w-full h-1.5 rounded-full bg-[#121F18] overflow-hidden">
+                        <div
+                          className="h-full rounded-full bg-gradient-to-r from-emerald-700 to-emerald-400 transition-all duration-700"
+                          style={{ width: `${projection.winProbability}%` }}
+                        />
+                      </div>
+                    </div>
+                    <div className="bg-[#0E1712] rounded-xl p-3 space-y-1.5">
+                      <span className="text-[9px] font-bold uppercase tracking-wider text-[#718579] block">
+                        MODEL CONFIDENCE
+                      </span>
+                      <div className="flex items-baseline gap-1">
+                        <span className="text-xl font-black text-blue-400">
+                          {projection.confidenceScore}%
+                        </span>
+                      </div>
+                      <div className="w-full h-1.5 rounded-full bg-[#121F18] overflow-hidden">
+                        <div
+                          className="h-full rounded-full bg-gradient-to-r from-blue-700 to-blue-400 transition-all duration-700"
+                          style={{ width: `${projection.confidenceScore}%` }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Swing Delta + Leading Margin */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="bg-[#0E1712] rounded-xl p-3">
+                      <span className="text-[9px] font-bold uppercase tracking-wider text-[#718579] block mb-1">
+                        SWING DELTA
+                      </span>
+                      <span className="text-xs font-bold text-amber-400">
+                        {projection.swingDelta}
+                      </span>
+                    </div>
+                    <div className="bg-[#0E1712] rounded-xl p-3">
+                      <span className="text-[9px] font-bold uppercase tracking-wider text-[#718579] block mb-1">
+                        PROJECTED MARGIN
+                      </span>
+                      <span className="text-xs font-bold text-white leading-tight block">
+                        {projection.leadingMargin}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Secondary Model Insight */}
+                  <div className="p-3 rounded-lg bg-[#10B981]/[0.06] border border-[#10B981]/15 text-[11px] text-[#94A89D] leading-relaxed flex-1">
+                    <span className="text-[9px] font-bold uppercase tracking-wider text-[#718579] block mb-1.5">
+                      MODEL INTEGRITY NOTE
+                    </span>
+                    {projection.keyInsights[1]}
+                  </div>
+                </>
+              ) : (
+                /* Idle state — no projection run yet */
+                <div className="flex-1 flex flex-col items-center justify-center gap-3 py-4 text-center">
+                  <div className="w-10 h-10 rounded-2xl bg-[#10B981]/10 border border-[#10B981]/20 flex items-center justify-center">
+                    <Sparkles className="w-5 h-5 text-[#10B981]/50" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold text-[#718579]">Awaiting Simulation Input</p>
+                    <p className="text-[11px] text-[#718579]/60 mt-0.5">
+                      Select a candidate and geographic scope above to run the neural projection model.
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}
@@ -867,6 +954,7 @@ export const DashboardView: React.FC = () => {
                     </span>
 
                     <button
+                      disabled={isSupervisory && isDraft}
                       onClick={() => {
                         if (isSupervisory || isPub) {
                           if (pu.result) {
@@ -889,13 +977,15 @@ export const DashboardView: React.FC = () => {
                         }
                       }}
                       className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold transition ${
-                        isPub || isSupervisory
+                        isSupervisory && isDraft
+                          ? 'bg-[#1C2E24] text-amber-500/50 cursor-not-allowed opacity-60'
+                          : isPub || isSupervisory
                           ? 'bg-[#1C2E24] text-white hover:bg-[#253D30]'
                           : 'bg-[#10B981] text-black hover:bg-emerald-400'
                       }`}
                     >
-                      <span>{isSupervisory ? 'Audit' : isPub ? 'View' : isDraft ? 'Resume' : 'Submit'}</span>
-                      <ChevronRight className="w-3.5 h-3.5" />
+                      <span>{isSupervisory && isDraft ? 'Unsubmitted' : isSupervisory ? 'Audit' : isPub ? 'View' : isDraft ? 'Resume' : 'Submit'}</span>
+                      {!(isSupervisory && isDraft) && <ChevronRight className="w-3.5 h-3.5" />}
                     </button>
                   </div>
                 </div>

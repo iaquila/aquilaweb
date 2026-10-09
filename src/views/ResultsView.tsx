@@ -195,8 +195,19 @@ export const ResultsView: React.FC = () => {
             return (
               <Card
                 key={result.id}
-                onClick={() => setSelectedResultId(result.id)}
-                className="hover:border-emerald-500/50 p-4 lg:p-5 transition cursor-pointer shadow-md space-y-4"
+                onClick={() => {
+                  if (result.status === 'DRAFT') {
+                    if (isFieldAgent) setDraftsQueueOpen(true);
+                    // supervisors: no action — draft is uncertified, no EC8A
+                    return;
+                  }
+                  setSelectedResultId(result.id);
+                }}
+                className={`p-4 lg:p-5 transition shadow-md space-y-4 ${
+                  result.status === 'DRAFT' && !isFieldAgent
+                    ? 'opacity-75 cursor-default border-amber-500/20 hover:border-amber-500/30'
+                    : 'hover:border-emerald-500/50 cursor-pointer'
+                }`}
               >
                 {/* Header Row */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-[#1C2E24]">
@@ -256,63 +267,76 @@ export const ResultsView: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Candidate Vote Breakdown Grid */}
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-1">
-                  {candidates.map((cand) => {
-                    const votes = result.candidateVotes[cand.id] || 0;
-                    const inecVotes = result.candidateVotesInec[cand.id] || 0;
-                    const variance = votes - inecVotes;
+                {/* Draft Gate — supervisor cannot read uncertified field work */}
+                {result.status === 'DRAFT' && !isFieldAgent ? (
+                  <div className="flex items-center gap-3 p-3 rounded-xl bg-amber-500/[0.06] border border-amber-500/25">
+                    <AlertTriangle className="w-4 h-4 text-amber-400 flex-shrink-0" />
+                    <div>
+                      <p className="text-xs font-bold text-amber-400">Unsubmitted Field Draft</p>
+                      <p className="text-[11px] text-[#718579] mt-0.5">Numbers are unverified and uncertified. No EC8A form has been transmitted. Audit detail is locked until the field agent submits.</p>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    {/* Candidate Vote Breakdown Grid */}
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-1">
+                      {candidates.map((cand) => {
+                        const votes = result.candidateVotes[cand.id] || 0;
+                        const inecVotes = result.candidateVotesInec[cand.id] || 0;
+                        const variance = votes - inecVotes;
 
-                    return (
-                      <div
-                        key={cand.id}
-                        className="bg-[#070C09] p-3 rounded-xl border border-[#1C2E24] text-xs space-y-1"
-                      >
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-1.5">
-                            <span
-                              className="w-2 h-2 rounded-full"
-                              style={{ backgroundColor: cand.partyColor || '#10B981' }}
-                            />
-                            <span className="font-bold text-white">
-                              {cand.partyAcronym}
-                            </span>
+                        return (
+                          <div
+                            key={cand.id}
+                            className="bg-[#070C09] p-3 rounded-xl border border-[#1C2E24] text-xs space-y-1"
+                          >
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-1.5">
+                                <span
+                                  className="w-2 h-2 rounded-full"
+                                  style={{ backgroundColor: cand.partyColor || '#10B981' }}
+                                />
+                                <span className="font-bold text-white">
+                                  {cand.partyAcronym}
+                                </span>
+                              </div>
+                              {result.status === 'PUBLISHED' && variance !== 0 && (
+                                <span
+                                  className={`text-[10px] font-mono font-bold ${
+                                    variance > 0 ? 'text-red-400' : 'text-amber-400'
+                                  }`}
+                                >
+                                  {variance > 0 ? `+${variance}` : variance}
+                                </span>
+                              )}
+                            </div>
+                            <div className="flex items-baseline justify-between font-mono">
+                              <span className="text-base font-extrabold text-white">
+                                {votes}
+                              </span>
+                              {result.status === 'PUBLISHED' && (
+                                <span className="text-[10px] text-[#718579]">
+                                  INEC: {inecVotes}
+                                </span>
+                              )}
+                            </div>
                           </div>
-                          {result.status === 'PUBLISHED' && variance !== 0 && (
-                            <span
-                              className={`text-[10px] font-mono font-bold ${
-                                variance > 0 ? 'text-red-400' : 'text-amber-400'
-                              }`}
-                            >
-                              {variance > 0 ? `+${variance}` : variance}
-                            </span>
-                          )}
-                        </div>
-                        <div className="flex items-baseline justify-between font-mono">
-                          <span className="text-base font-extrabold text-white">
-                            {votes}
-                          </span>
-                          {result.status === 'PUBLISHED' && (
-                            <span className="text-[10px] text-[#718579]">
-                              INEC: {inecVotes}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
+                        );
+                      })}
+                    </div>
 
-                {/* Footer bar */}
-                <div className="flex items-center justify-between text-[11px] text-[#718579] pt-1">
-                  <span className="flex items-center gap-1">
-                    <MapPin className="w-3 h-3 text-emerald-400" />
-                    GPS: {result.latitude?.toFixed(4)}, {result.longitude?.toFixed(4)}
-                  </span>
-                  <span className="text-emerald-400 font-semibold flex items-center gap-1">
-                    View Audit Detail &amp; Proof →
-                  </span>
-                </div>
+                    {/* Footer bar */}
+                    <div className="flex items-center justify-between text-[11px] text-[#718579] pt-1">
+                      <span className="flex items-center gap-1">
+                        <MapPin className="w-3 h-3 text-emerald-400" />
+                        GPS: {result.latitude?.toFixed(4)}, {result.longitude?.toFixed(4)}
+                      </span>
+                      <span className="text-emerald-400 font-semibold flex items-center gap-1">
+                        View Audit Detail &amp; Proof →
+                      </span>
+                    </div>
+                  </>
+                )}
               </Card>
             );
           })
