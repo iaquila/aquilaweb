@@ -6,9 +6,21 @@ import {
   Layers,
   Globe,
   Flame,
+  X,
+  BarChart3,
+  Maximize2,
+  ExternalLink,
+  ShieldCheck,
+  CheckCircle2,
 } from 'lucide-react';
 import { useAppStore } from '../store';
 import { PARTY_COLORS } from '../constants';
+import { useModalA11y } from '../hooks/useModalA11y';
+import {
+  NIGERIA_MAP_VIEWBOX,
+  NIGERIA_RIVERS,
+  NIGERIA_STATE_GEOMETRIES,
+} from '../data/nigeriaMapData';
 
 export type GeoLevel = 'state' | 'lga';
 export type MapHeatMode = 'party' | 'density';
@@ -19,9 +31,8 @@ interface NigeriaHeatMapProps {
 }
 
 // ---------------------------------------------------------------------------
-// SVG Polygon Definitions for LGAs and States (ViewBox 380x250)
+// Tactical LGA Polygon Definitions for Detailed District Radars (ViewBox 380x250)
 // ---------------------------------------------------------------------------
-
 const LGA_MAP_POLYGONS: Record<
   string,
   { path: string; labelX: number; labelY: number; label: string }
@@ -162,83 +173,6 @@ const LGA_MAP_POLYGONS: Record<
   },
 };
 
-const STATE_MAP_POLYGONS: Record<
-  string,
-  {
-    path: string;
-    labelX: number;
-    labelY: number;
-    name: string;
-    code: string;
-    zone: string;
-  }
-> = {
-  'state-kano': {
-    path: 'M 180 38 L 240 32 L 252 74 L 202 82 L 180 62 Z',
-    labelX: 212,
-    labelY: 56,
-    name: 'Kano',
-    code: 'KAN',
-    zone: 'North West',
-  },
-  'state-kaduna': {
-    path: 'M 148 76 L 202 82 L 210 122 L 154 118 Z',
-    labelX: 178,
-    labelY: 98,
-    name: 'Kaduna',
-    code: 'KAD',
-    zone: 'North West',
-  },
-  'state-fct': {
-    path: 'M 168 122 L 204 122 L 208 148 L 170 150 Z',
-    labelX: 187,
-    labelY: 135,
-    name: 'FCT',
-    code: 'FCT',
-    zone: 'North Central',
-  },
-  'state-oyo': {
-    path: 'M 54 142 L 102 138 L 108 178 L 62 182 Z',
-    labelX: 80,
-    labelY: 158,
-    name: 'Oyo',
-    code: 'OYO',
-    zone: 'South West',
-  },
-  'state-lagos': {
-    path: 'M 58 184 L 120 180 L 122 206 L 54 206 Z',
-    labelX: 86,
-    labelY: 195,
-    name: 'Lagos',
-    code: 'LOS',
-    zone: 'South West',
-  },
-  'state-rivers': {
-    path: 'M 184 192 L 230 190 L 236 222 L 182 221 Z',
-    labelX: 208,
-    labelY: 206,
-    name: 'Rivers',
-    code: 'RIV',
-    zone: 'South South',
-  },
-  'state-enugu': {
-    path: 'M 208 152 L 248 150 L 252 186 L 210 188 Z',
-    labelX: 228,
-    labelY: 168,
-    name: 'Enugu',
-    code: 'ENU',
-    zone: 'South East',
-  },
-  'state-borno': {
-    path: 'M 268 42 L 334 52 L 322 105 L 264 92 Z',
-    labelX: 296,
-    labelY: 72,
-    name: 'Borno',
-    code: 'BOR',
-    zone: 'North East',
-  },
-};
-
 export type LgaCollation = {
   id: string;
   name: string;
@@ -271,7 +205,7 @@ export type StateCollation = {
   shares: Array<{ party: 'CPA' | 'DPP' | 'PL' | 'PPNN'; votes: number; pct: number }>;
 };
 
-
+// Sequential progress ramp for collation returns density
 const DENSITY_RAMP = [
   '#092618',
   '#0E3E26',
@@ -293,13 +227,20 @@ export const NigeriaHeatMap: React.FC<NigeriaHeatMapProps> = ({
   const [activeLgaState, setActiveLgaState] = useState<string>('Lagos');
   const [selectedMapStateId, setSelectedMapStateId] = useState<string>('state-lagos');
   const [selectedMapLgaId, setSelectedMapLgaId] = useState<string>('lga-ikeja');
+  const [hoveredStateId, setHoveredStateId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [inspectModalUnit, setInspectModalUnit] = useState<LgaCollation | StateCollation | null>(null);
+
+  useModalA11y({
+    isOpen: !!inspectModalUnit,
+    onClose: () => setInspectModalUnit(null),
+  });
 
   // ---------------------------------------------------------------------------
-  // Aggregate LGA Collation Heatmap data
+  // Aggregate Comprehensive 37-State Baseline LGA Data
   // ---------------------------------------------------------------------------
   const lgaHeatmapData: LgaCollation[] = useMemo(() => {
-    const lgaBases = [
+    const primaryHubBases = [
       { id: 'lga-ikeja', name: 'Ikeja LGA', state: 'Lagos', totalPus: 450, baseCollated: 412, baseVotes: { CPA: 42350, DPP: 28140, PL: 21980, PPNN: 3200 } },
       { id: 'lga-mainland', name: 'Lagos Mainland', state: 'Lagos', totalPus: 380, baseCollated: 345, baseVotes: { CPA: 27800, DPP: 35900, PL: 18450, PPNN: 2800 } },
       { id: 'lga-alimosho', name: 'Alimosho LGA', state: 'Lagos', totalPus: 620, baseCollated: 540, baseVotes: { CPA: 41200, DPP: 22400, PL: 53100, PPNN: 4600 } },
@@ -311,7 +252,7 @@ export const NigeriaHeatMap: React.FC<NigeriaHeatMapProps> = ({
       { id: 'lga-nassarawa-kn', name: 'Nassarawa LGA', state: 'Kano', totalPus: 350, baseCollated: 305, baseVotes: { CPA: 22100, DPP: 11400, PL: 3900, PPNN: 54200 } },
       { id: 'lga-obio-akpor', name: 'Obio-Akpor LGA', state: 'Rivers', totalPus: 420, baseCollated: 381, baseVotes: { CPA: 19800, DPP: 47200, PL: 24600, PPNN: 1800 } },
       { id: 'lga-phalga', name: 'Port Harcourt LGA', state: 'Rivers', totalPus: 300, baseCollated: 256, baseVotes: { CPA: 16400, DPP: 28900, PL: 24700, PPNN: 1400 } },
-      { id: 'lga-amac', name: 'AMAC Area Council', state: 'FCT', totalPus: 380, baseCollated: 340, baseVotes: { CPA: 22100, DPP: 11400, PL: 3900, PPNN: 54200 } },
+      { id: 'lga-amac', name: 'AMAC Area Council', state: 'FCT', totalPus: 380, baseCollated: 340, baseVotes: { CPA: 22100, DPP: 18400, PL: 34900, PPNN: 3200 } },
       { id: 'lga-bwari', name: 'Bwari Area Council', state: 'FCT', totalPus: 220, baseCollated: 186, baseVotes: { CPA: 9800, DPP: 11200, PL: 28600, PPNN: 1100 } },
       { id: 'lga-kaduna-north', name: 'Kaduna North LGA', state: 'Kaduna', totalPus: 340, baseCollated: 295, baseVotes: { CPA: 38200, DPP: 29400, PL: 12100, PPNN: 11200 } },
       { id: 'lga-kaduna-south', name: 'Kaduna South LGA', state: 'Kaduna', totalPus: 310, baseCollated: 260, baseVotes: { CPA: 31500, DPP: 33800, PL: 15400, PPNN: 8900 } },
@@ -323,6 +264,52 @@ export const NigeriaHeatMap: React.FC<NigeriaHeatMapProps> = ({
       { id: 'lga-jere', name: 'Jere LGA', state: 'Borno', totalPus: 290, baseCollated: 245, baseVotes: { CPA: 41800, DPP: 16200, PL: 3200, PPNN: 6400 } },
     ];
 
+    const coveredStates = new Set(primaryHubBases.map((b) => b.state.toLowerCase()));
+    const additionalBases: typeof primaryHubBases = [];
+
+    Object.values(NIGERIA_STATE_GEOMETRIES).forEach((geom) => {
+      if (coveredStates.has(geom.name.toLowerCase())) return;
+
+      const zone = geom.zone;
+      let voteRatio: { CPA: number; DPP: number; PL: number; PPNN: number };
+      if (zone === 'North West') {
+        voteRatio = { CPA: 0.44, DPP: 0.28, PL: 0.08, PPNN: 0.20 };
+      } else if (zone === 'North East') {
+        voteRatio = { CPA: 0.48, DPP: 0.38, PL: 0.06, PPNN: 0.08 };
+      } else if (zone === 'North Central') {
+        voteRatio = { CPA: 0.36, DPP: 0.34, PL: 0.25, PPNN: 0.05 };
+      } else if (zone === 'South West') {
+        voteRatio = { CPA: 0.46, DPP: 0.24, PL: 0.27, PPNN: 0.03 };
+      } else if (zone === 'South East') {
+        voteRatio = { CPA: 0.08, DPP: 0.22, PL: 0.68, PPNN: 0.02 };
+      } else {
+        // South South
+        voteRatio = { CPA: 0.28, DPP: 0.42, PL: 0.27, PPNN: 0.03 };
+      }
+
+      const lgaNames = [`${geom.name} Central`, `${geom.name} North`, `${geom.name} South`];
+      lgaNames.forEach((lgaName, idx) => {
+        const pus = 260 + idx * 45;
+        const collated = Math.round(pus * (0.86 + idx * 0.04));
+        const totalV = collated * 125;
+        additionalBases.push({
+          id: `lga-${geom.name.toLowerCase().replace(/\s+/g, '-')}-${idx + 1}`,
+          name: lgaName,
+          state: geom.name,
+          totalPus: pus,
+          baseCollated: collated,
+          baseVotes: {
+            CPA: Math.round(totalV * voteRatio.CPA),
+            DPP: Math.round(totalV * voteRatio.DPP),
+            PL: Math.round(totalV * voteRatio.PL),
+            PPNN: Math.round(totalV * voteRatio.PPNN),
+          },
+        });
+      });
+    });
+
+    const allBases = [...primaryHubBases, ...additionalBases];
+
     const candidateNames: Record<string, string> = {
       CPA: 'Ahmed Okwute',
       DPP: 'Abubakuar Matthew',
@@ -330,8 +317,7 @@ export const NigeriaHeatMap: React.FC<NigeriaHeatMapProps> = ({
       PPNN: 'Borro Nassiru',
     };
 
-    return lgaBases.map((base) => {
-      // Incorporate any published results from the active store
+    return allBases.map((base) => {
       const matchingStoreResults = results.filter(
         (r) =>
           r.status === 'PUBLISHED' &&
@@ -397,20 +383,9 @@ export const NigeriaHeatMap: React.FC<NigeriaHeatMapProps> = ({
   }, [results]);
 
   // ---------------------------------------------------------------------------
-  // State aggregation derived from LGA rows
+  // Derived State Collation for All 37 Nigerian States and FCT
   // ---------------------------------------------------------------------------
   const stateHeatmapData: StateCollation[] = useMemo(() => {
-    const STATE_ZONES: Record<string, { zone: string; code: string }> = {
-      Lagos: { zone: 'South West', code: 'LOS' },
-      Kano: { zone: 'North West', code: 'KAN' },
-      Rivers: { zone: 'South South', code: 'RIV' },
-      FCT: { zone: 'North Central', code: 'FCT' },
-      Kaduna: { zone: 'North West', code: 'KAD' },
-      Oyo: { zone: 'South West', code: 'OYO' },
-      Enugu: { zone: 'South East', code: 'ENU' },
-      Borno: { zone: 'North East', code: 'BOR' },
-    };
-
     const candidateNames: Record<string, string> = {
       CPA: 'Ahmed Okwute',
       DPP: 'Abubakuar Matthew',
@@ -445,51 +420,50 @@ export const NigeriaHeatMap: React.FC<NigeriaHeatMapProps> = ({
       byState.set(lga.state, entry);
     });
 
-    return [...byState.entries()].map(([state, entry]) => {
-      const totalVotes =
-        entry.votes.CPA + entry.votes.DPP + entry.votes.PL + entry.votes.PPNN;
-      const shares = (
-        Object.entries(entry.votes) as Array<[StateCollation['leadingParty'], number]>
-      )
-        .map(([party, votes]) => ({
-          party,
-          votes,
-          pct: totalVotes > 0 ? (votes / totalVotes) * 100 : 0,
-        }))
-        .sort((a, b) => b.votes - a.votes);
-      const leader = shares[0]!;
-      const runnerUp = shares[1]!;
-      const meta =
-        STATE_ZONES[state] ?? {
-          zone: 'Federation Zone',
-          code: state.substring(0, 3).toUpperCase(),
-        };
+    return [...byState.entries()]
+      .map(([state, entry]) => {
+        const totalVotes =
+          entry.votes.CPA + entry.votes.DPP + entry.votes.PL + entry.votes.PPNN;
+        const shares = (
+          Object.entries(entry.votes) as Array<[StateCollation['leadingParty'], number]>
+        )
+          .map(([party, votes]) => ({
+            party,
+            votes,
+            pct: totalVotes > 0 ? (votes / totalVotes) * 100 : 0,
+          }))
+          .sort((a, b) => b.votes - a.votes);
+        const leader = shares[0]!;
+        const runnerUp = shares[1]!;
+        const stateKey = `state-${state.toLowerCase().replace(/\s+/g, '-')}`;
+        const geom = NIGERIA_STATE_GEOMETRIES[stateKey];
 
-      return {
-        id: `state-${state.toLowerCase().replace(/\s+/g, '-')}`,
-        name: state,
-        zone: meta.zone,
-        code: meta.code,
-        lgaCount: entry.lgaCount,
-        totalPus: entry.totalPus,
-        baseCollated: entry.baseCollated,
-        totalVotes,
-        reportingPct:
-          entry.totalPus > 0
-            ? Number(Math.min(100, (entry.baseCollated / entry.totalPus) * 100).toFixed(0))
-            : 0,
-        leadingParty: leader.party,
-        leadingCandidate: candidateNames[leader.party] ?? leader.party,
-        leadingPct: leader.pct.toFixed(1),
-        margin: `+${(leader.pct - runnerUp.pct).toFixed(1)}% lead`,
-        shares,
-      };
-    });
+        return {
+          id: stateKey,
+          name: state,
+          zone: geom?.zone ?? 'Federation Zone',
+          code: geom?.code ?? state.substring(0, 3).toUpperCase(),
+          lgaCount: entry.lgaCount,
+          totalPus: entry.totalPus,
+          baseCollated: entry.baseCollated,
+          totalVotes,
+          reportingPct:
+            entry.totalPus > 0
+              ? Number(Math.min(100, (entry.baseCollated / entry.totalPus) * 100).toFixed(0))
+              : 0,
+          leadingParty: leader.party,
+          leadingCandidate: candidateNames[leader.party] ?? leader.party,
+          leadingPct: leader.pct.toFixed(1),
+          margin: `+${(leader.pct - runnerUp.pct).toFixed(1)}% lead`,
+          shares,
+        };
+      })
+      .sort((a, b) => a.name.localeCompare(b.name));
   }, [lgaHeatmapData]);
 
   const statesInView = useMemo(() => {
-    return [...new Set(lgaHeatmapData.map((l) => l.state))];
-  }, [lgaHeatmapData]);
+    return stateHeatmapData.map((s) => s.name);
+  }, [stateHeatmapData]);
 
   const effectiveLgaState = activeLgaState || statesInView[0] || 'Lagos';
 
@@ -529,9 +503,9 @@ export const NigeriaHeatMap: React.FC<NigeriaHeatMapProps> = ({
   const overallReportingPct =
     totalPusAcrossLgas > 0
       ? Math.round((totalCollatedAcrossLgas / totalPusAcrossLgas) * 100)
-      : 88;
+      : 89;
 
-  // Fill color calculation
+  // Fill color calculation based on display mode
   const getFillColor = (item: { leadingParty: 'CPA' | 'DPP' | 'PL' | 'PPNN'; reportingPct: number }) => {
     if (mapHeatMode === 'density') {
       const idx = Math.min(
@@ -543,7 +517,7 @@ export const NigeriaHeatMap: React.FC<NigeriaHeatMapProps> = ({
     return PARTY_COLORS[item.leadingParty] ?? '#10B981';
   };
 
-  // Filtered list for search table in non-compact view
+  // Filtered list for search table in dossier view
   const filteredList = useMemo(() => {
     if (!searchQuery.trim()) {
       return geoLevel === 'state' ? stateHeatmapData : mapLgas;
@@ -559,6 +533,26 @@ export const NigeriaHeatMap: React.FC<NigeriaHeatMapProps> = ({
     );
   }, [geoLevel, stateHeatmapData, mapLgas, lgaHeatmapData, searchQuery]);
 
+  // Seamless audit action linking to the Results view with PU search applied
+  const handleAuditUnit = (unit: StateCollation | LgaCollation) => {
+    setInspectModalUnit(null);
+    const filterTerm = 'state' in unit
+      ? unit.name.replace(/ LGA| Area Council/gi, '').trim()
+      : unit.name;
+    setSelectedStateFilter(filterTerm);
+    setActiveTab('results');
+  };
+
+  const handleDrilldownLga = (stateName: string) => {
+    setInspectModalUnit(null);
+    setActiveLgaState(stateName);
+    setGeoLevel('lga');
+    const firstLga = lgaHeatmapData.find(
+      (l) => l.state.toLowerCase() === stateName.toLowerCase()
+    );
+    if (firstLga) setSelectedMapLgaId(firstLga.id);
+  };
+
   return (
     <div
       className={`rounded-2xl border border-[#1C2E24] bg-[#0E1712] shadow-xl overflow-hidden ${
@@ -566,7 +560,7 @@ export const NigeriaHeatMap: React.FC<NigeriaHeatMapProps> = ({
       } ${className}`}
     >
       {/* --------------------------------------------------------------------- */}
-      {/* Top Header Controls Bar */}
+      {/* Top Header Tactical Telemetry Bar */}
       {/* --------------------------------------------------------------------- */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-3 border-b border-[#1C2E24]">
         <div>
@@ -574,18 +568,18 @@ export const NigeriaHeatMap: React.FC<NigeriaHeatMapProps> = ({
             <span className="w-2 h-2 rounded-full bg-[#10B981] animate-pulse" />
             <span className="text-[11px] font-extrabold uppercase tracking-widest text-[#10B981]">
               {geoLevel === 'state'
-                ? 'FEDERATION TACTICAL RADAR'
+                ? 'FEDERATION TACTICAL CHOROPLETH'
                 : `${effectiveLgaState.toUpperCase()} DISTRICT RADAR`}
             </span>
           </div>
           <h2 className="text-base sm:text-lg font-black text-white mt-0.5">
             {geoLevel === 'state'
-              ? 'National Presidential Collation Map'
+              ? 'National Presidential Collation Map (36 States + FCT)'
               : `${effectiveLgaState} State LGA Collation Map`}
           </h2>
           <p className="text-xs text-[#718579]">
             {geoLevel === 'state'
-              ? `${stateHeatmapData.length} Key Hubs · ${totalCollatedAcrossLgas.toLocaleString()} / ${totalPusAcrossLgas.toLocaleString()} PUs Collated`
+              ? `All 37 Federation Administrative Hubs · ${totalCollatedAcrossLgas.toLocaleString()} / ${totalPusAcrossLgas.toLocaleString()} PUs Collated`
               : `${mapLgas.length} Monitored LGAs · ${mapLgas.reduce(
                   (a, b) => a + b.baseCollated,
                   0
@@ -621,7 +615,7 @@ export const NigeriaHeatMap: React.FC<NigeriaHeatMapProps> = ({
             </button>
           </div>
 
-          {/* Lead vs Heat Mode Pill Group */}
+          {/* Lead vs Progress Mode Pill Group */}
           <div className="inline-flex items-center p-1 rounded-xl bg-[#070C09] border border-[#1C2E24]">
             <button
               onClick={() => setMapHeatMode('party')}
@@ -632,7 +626,7 @@ export const NigeriaHeatMap: React.FC<NigeriaHeatMapProps> = ({
               }`}
             >
               <Sparkles className="w-3.5 h-3.5" />
-              <span>Lead</span>
+              <span>Leading Party</span>
             </button>
             <button
               onClick={() => setMapHeatMode('density')}
@@ -643,7 +637,7 @@ export const NigeriaHeatMap: React.FC<NigeriaHeatMapProps> = ({
               }`}
             >
               <Flame className="w-3.5 h-3.5" />
-              <span>Heat</span>
+              <span>Returns Density</span>
             </button>
           </div>
 
@@ -658,7 +652,7 @@ export const NigeriaHeatMap: React.FC<NigeriaHeatMapProps> = ({
       {/* State Scoping Selector Chips for LGA Mode */}
       {/* --------------------------------------------------------------------- */}
       {geoLevel === 'lga' && (
-        <div className="flex items-center gap-1.5 overflow-x-auto py-2.5 border-b border-[#1C2E24]/60 text-xs">
+        <div className="flex items-center gap-1.5 overflow-x-auto py-2.5 border-b border-[#1C2E24]/60 text-xs no-scrollbar">
           <span className="text-[11px] font-bold uppercase tracking-wider text-[#718579] shrink-0 mr-1 flex items-center gap-1">
             <Layers className="w-3.5 h-3.5 text-[#10B981]" />
             Select State:
@@ -709,33 +703,37 @@ export const NigeriaHeatMap: React.FC<NigeriaHeatMapProps> = ({
             <div className="flex items-center gap-3">
               <span className="font-mono text-emerald-400 font-bold flex items-center gap-1">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                {geoLevel === 'state' ? 'NATIONAL FEDERATION' : `${effectiveLgaState.toUpperCase()} LGAS`}
+                {geoLevel === 'state' ? '37 FEDERATION HUBS' : `${effectiveLgaState.toUpperCase()} LGAS`}
               </span>
               <span className="text-[#718579]">•</span>
               <span className="text-[#94A89D]">
-                {mapHeatMode === 'party' ? 'Mode: Leading Party' : 'Mode: Collation Density'}
+                {mapHeatMode === 'party' ? 'Choropleth: Leading Party' : 'Choropleth: Collation Progress'}
               </span>
             </div>
 
             <div className="flex items-center gap-2">
               <span className="text-[10px] text-[#34D399]/70 font-mono">GRID: NGA-WGS84</span>
-              <span className="text-[10px] font-bold text-emerald-400 font-mono">▲ N 09°04'</span>
+              <span className="text-[10px] font-bold text-emerald-400 font-mono">▲ N 09°04' E 08°40'</span>
             </div>
           </div>
 
           {/* SVG Map Container */}
           <div
             className={`relative w-full flex items-center justify-center my-2 ${
-              compact ? 'max-h-[300px] aspect-[16/9]' : 'aspect-[16/10]'
+              compact ? 'max-h-[340px] aspect-[16/11]' : 'aspect-[16/11]'
             }`}
           >
             <svg
-              viewBox="0 0 380 250"
+              viewBox={geoLevel === 'state' ? NIGERIA_MAP_VIEWBOX : '0 0 380 250'}
+              role="region"
+              aria-label="National Presidential Collation Map of Nigeria"
               className="w-full h-full drop-shadow-2xl select-none"
             >
+              <title>National Presidential Collation Map</title>
+              <desc>Interactive choropleth map of Nigeria displaying election collation returns across all 36 states and FCT.</desc>
               <defs>
-                <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
-                  <feGaussianBlur stdDeviation="3" result="blur" />
+                <filter id="map-glow" x="-20%" y="-20%" width="140%" height="140%">
+                  <feGaussianBlur stdDeviation="4" result="blur" />
                   <feComposite in="SourceGraphic" in2="blur" operator="over" />
                 </filter>
               </defs>
@@ -745,330 +743,396 @@ export const NigeriaHeatMap: React.FC<NigeriaHeatMapProps> = ({
                 // LGA Layer for Active State
                 // -----------------------------------------------------------
                 <g key="lga-layer">
-                  {mapLgas.map((lga) => {
-                    const poly = LGA_MAP_POLYGONS[lga.id];
-                    if (!poly) return null;
-                    const isSelected = selectedMapLgaId === lga.id;
-                    const fillColor = getFillColor(lga);
+                  {mapLgas.some((l) => LGA_MAP_POLYGONS[l.id]) ? (
+                    mapLgas.map((lga) => {
+                      const poly = LGA_MAP_POLYGONS[lga.id];
+                      if (!poly) return null;
+                      const isSelected = selectedMapLgaId === lga.id;
+                      const fillColor = getFillColor(lga);
 
-                    return (
-                      <g
-                        key={lga.id}
-                        onClick={() => setSelectedMapLgaId(lga.id)}
-                        className="cursor-pointer transition-all duration-150"
-                      >
-                        {isSelected && (
+                      return (
+                        <g
+                          key={lga.id}
+                          role="button"
+                          tabIndex={0}
+                          aria-label={`${lga.name}: ${lga.leadingParty} leading, ${lga.reportingPct}% collated. Click to inspect.`}
+                          aria-pressed={isSelected}
+                          onClick={() => {
+                            setSelectedMapLgaId(lga.id);
+                            setInspectModalUnit(lga);
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                              e.preventDefault();
+                              setSelectedMapLgaId(lga.id);
+                              setInspectModalUnit(lga);
+                            }
+                          }}
+                          className="cursor-pointer transition-all duration-150 focus:outline-none"
+                        >
+                          <title>{`${lga.name} - ${lga.leadingParty} (${lga.leadingPct}%) | ${lga.reportingPct}% PUs`}</title>
+                          {isSelected && (
+                            <path
+                              d={poly.path}
+                              fill="none"
+                              stroke="#34D399"
+                              strokeWidth={5}
+                              strokeOpacity={0.6}
+                            />
+                          )}
                           <path
                             d={poly.path}
-                            fill="none"
-                            stroke="#34D399"
-                            strokeWidth={5}
-                            strokeOpacity={0.6}
+                            fill={fillColor}
+                            fillOpacity={isSelected ? 0.95 : 0.78}
+                            stroke={isSelected ? '#FFFFFF' : '#070C09'}
+                            strokeWidth={isSelected ? 2.5 : 1.5}
                           />
-                        )}
-                        <path
-                          d={poly.path}
-                          fill={fillColor}
-                          fillOpacity={isSelected ? 0.95 : 0.78}
-                          stroke={isSelected ? '#FFFFFF' : '#070C09'}
-                          strokeWidth={isSelected ? 2.5 : 1.5}
-                        />
 
-                        {/* Contrast Badge Plate behind text for crisp readability */}
-                        <rect
-                          x={poly.labelX - 44}
-                          y={poly.labelY - 14}
-                          width={88}
-                          height={28}
-                          rx={5}
-                          fill="#040B06EE"
-                          stroke={isSelected ? '#FDE047' : '#FFFFFF25'}
-                          strokeWidth={isSelected ? 1.5 : 0.8}
-                        />
-                        <text
-                          x={poly.labelX}
-                          y={poly.labelY - 2}
-                          fill="#FFFFFF"
-                          fontSize="10"
-                          fontWeight="bold"
-                          textAnchor="middle"
-                        >
-                          {poly.label}
-                        </text>
-                        <text
-                          x={poly.labelX}
-                          y={poly.labelY + 9}
-                          fill={isSelected ? '#FDE047' : '#FFFFFFCC'}
-                          fontSize="8"
-                          fontWeight="bold"
-                          textAnchor="middle"
-                        >
-                          {mapHeatMode === 'party'
-                            ? `${lga.leadingParty} (${lga.leadingPct}%)`
-                            : `${lga.reportingPct}% PUs`}
-                        </text>
+                          {/* Contrast Badge Plate behind text */}
+                          <rect
+                            x={poly.labelX - 44}
+                            y={poly.labelY - 14}
+                            width={88}
+                            height={28}
+                            rx={5}
+                            fill="#040B06EE"
+                            stroke={isSelected ? '#FDE047' : '#FFFFFF25'}
+                            strokeWidth={isSelected ? 1.5 : 0.8}
+                          />
+                          <text
+                            x={poly.labelX}
+                            y={poly.labelY - 2}
+                            fill="#FFFFFF"
+                            fontSize="10"
+                            fontWeight="bold"
+                            textAnchor="middle"
+                          >
+                            {poly.label}
+                          </text>
+                          <text
+                            x={poly.labelX}
+                            y={poly.labelY + 9}
+                            fill={isSelected ? '#FDE047' : '#FFFFFFCC'}
+                            fontSize="8"
+                            fontWeight="bold"
+                            textAnchor="middle"
+                          >
+                            {mapHeatMode === 'party'
+                              ? `${lga.leadingParty} (${lga.leadingPct}%)`
+                              : `${lga.reportingPct}% PUs`}
+                          </text>
 
-                        {isSelected && (
-                          <>
-                            <circle
-                              cx={poly.labelX}
-                              cy={poly.labelY - 19}
-                              r={4.5}
+                          {isSelected && (
+                            <>
+                              <circle
+                                cx={poly.labelX}
+                                cy={poly.labelY - 19}
+                                r={4.5}
+                                fill="#FFFFFF"
+                              />
+                              <circle
+                                cx={poly.labelX}
+                                cy={poly.labelY - 19}
+                                r={8.5}
+                                stroke="#FFFFFF88"
+                                strokeWidth={1.5}
+                                fill="none"
+                              />
+                            </>
+                          )}
+                        </g>
+                      );
+                    })
+                  ) : (
+                    // Tactical District Matrix for States without custom micro-polygons
+                    <g key="district-matrix">
+                      {mapLgas.map((lga, idx) => {
+                        const cellW = 100;
+                        const cellH = 65;
+                        const cols = Math.min(3, mapLgas.length);
+                        const row = Math.floor(idx / cols);
+                        const col = idx % cols;
+                        const startX = 35 + col * 110;
+                        const startY = 45 + row * 80;
+                        const isSelected = selectedMapLgaId === lga.id;
+                        const fillColor = getFillColor(lga);
+
+                        return (
+                          <g
+                            key={lga.id}
+                            role="button"
+                            tabIndex={0}
+                            aria-label={`${lga.name}: ${lga.leadingParty} leading, ${lga.reportingPct}% collated. Click to inspect.`}
+                            aria-pressed={isSelected}
+                            onClick={() => {
+                              setSelectedMapLgaId(lga.id);
+                              setInspectModalUnit(lga);
+                            }}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter' || e.key === ' ') {
+                                e.preventDefault();
+                                setSelectedMapLgaId(lga.id);
+                                setInspectModalUnit(lga);
+                              }
+                            }}
+                            className="cursor-pointer transition-all duration-150 focus:outline-none"
+                          >
+                            <rect
+                              x={startX}
+                              y={startY}
+                              width={cellW}
+                              height={cellH}
+                              rx={10}
+                              fill={fillColor}
+                              fillOpacity={isSelected ? 0.95 : 0.75}
+                              stroke={isSelected ? '#FFFFFF' : '#1C2E24'}
+                              strokeWidth={isSelected ? 2.5 : 1.2}
+                            />
+                            <text
+                              x={startX + cellW / 2}
+                              y={startY + 24}
                               fill="#FFFFFF"
-                            />
-                            <circle
-                              cx={poly.labelX}
-                              cy={poly.labelY - 19}
-                              r={8.5}
-                              stroke="#FFFFFF88"
-                              strokeWidth={1.5}
-                              fill="none"
-                            />
-                          </>
-                        )}
-                      </g>
-                    );
-                  })}
+                              fontSize="11"
+                              fontWeight="bold"
+                              textAnchor="middle"
+                            >
+                              {lga.name}
+                            </text>
+                            <text
+                              x={startX + cellW / 2}
+                              y={startY + 42}
+                              fill={isSelected ? '#FDE047' : '#FFFFFFDD'}
+                              fontSize="9"
+                              fontWeight="bold"
+                              textAnchor="middle"
+                            >
+                              {mapHeatMode === 'party'
+                                ? `${lga.leadingParty} · ${lga.leadingPct}%`
+                                : `${lga.reportingPct}% Collated`}
+                            </text>
+                            <text
+                              x={startX + cellW / 2}
+                              y={startY + 55}
+                              fill="#FFFFFF99"
+                              fontSize="8"
+                              textAnchor="middle"
+                            >
+                              {lga.baseCollated} / {lga.totalPus} PUs
+                            </text>
+                          </g>
+                        );
+                      })}
+                    </g>
+                  )}
                 </g>
               ) : (
                 // -----------------------------------------------------------
-                // National Federation State Layer
+                // Authentic National Federation 37-State Choropleth Layer
                 // -----------------------------------------------------------
                 <g key="state-layer">
-                  {/* Nigeria Land Boundary Contour Silhouette */}
-                  <path
-                    d="M 52 206 L 40 165 L 38 120 L 50 82 L 85 52 L 138 35 L 180 38 L 240 32 L 270 26 L 336 48 L 348 85 L 324 135 L 310 170 L 265 202 L 236 222 L 182 221 L 140 216 L 80 208 Z"
-                    fill="#0B1A12"
-                    stroke="#19482D"
-                    strokeWidth={1.5}
-                    strokeDasharray="4,2"
-                  />
-
-                  {/* Ambient Geopolitical Background Zones */}
-                  {/* North West Ambient */}
-                  <path
-                    d="M 85 52 L 180 38 L 180 62 L 148 76 L 95 95 Z"
-                    fill="#0E281B"
-                    stroke="#1B422D"
-                    strokeWidth={1}
-                    opacity={0.65}
-                  />
+                  {/* Ambient Geopolitical Neighbor Annotations */}
                   <text
-                    x={126}
-                    y={64}
+                    x={340}
+                    y={22}
                     fill="#34D39944"
-                    fontSize="8"
+                    fontSize="9"
                     fontWeight="bold"
                     textAnchor="middle"
+                    letterSpacing="3"
                   >
-                    NW ZONE
+                    NIGER REPUBLIC
                   </text>
-
-                  {/* North East Ambient */}
-                  <path
-                    d="M 240 32 L 270 26 L 268 42 L 264 92 L 210 122 Z"
-                    fill="#0E281B"
-                    stroke="#1B422D"
-                    strokeWidth={1}
-                    opacity={0.65}
-                  />
                   <text
-                    x={242}
-                    y={72}
-                    fill="#34D39944"
-                    fontSize="8"
-                    fontWeight="bold"
-                    textAnchor="middle"
-                  >
-                    NE ZONE
-                  </text>
-
-                  {/* North Central / Middle Belt Ambient */}
-                  <path
-                    d="M 95 95 L 148 76 L 168 122 L 102 138 Z"
-                    fill="#0E281B"
-                    stroke="#1B422D"
-                    strokeWidth={1}
-                    opacity={0.65}
-                  />
-                  <text
-                    x={128}
-                    y={114}
-                    fill="#34D39944"
-                    fontSize="8"
-                    fontWeight="bold"
-                    textAnchor="middle"
-                  >
-                    NC ZONE
-                  </text>
-
-                  {/* Benue / Plateau Ambient */}
-                  <path
-                    d="M 206 150 L 264 92 L 310 135 L 252 152 Z"
-                    fill="#0E281B"
-                    stroke="#1B422D"
-                    strokeWidth={1}
-                    opacity={0.65}
-                  />
-
-                  {/* South South Ambient */}
-                  <path
-                    d="M 115 180 L 184 192 L 182 221 L 122 206 Z"
-                    fill="#0E281B"
-                    stroke="#1B422D"
-                    strokeWidth={1}
-                    opacity={0.65}
-                  />
-                  <text
-                    x={148}
-                    y={204}
-                    fill="#34D39944"
-                    fontSize="8"
-                    fontWeight="bold"
-                    textAnchor="middle"
-                  >
-                    SS ZONE
-                  </text>
-
-                  {/* Iconic River Niger & River Benue Confluence */}
-                  <path
-                    d="M 68 85 Q 115 110 172 144"
-                    stroke="#38BDF866"
-                    strokeWidth={2}
-                    fill="none"
-                  />
-                  <path
-                    d="M 312 125 Q 245 138 172 144"
-                    stroke="#38BDF866"
-                    strokeWidth={2}
-                    fill="none"
-                  />
-                  <path
-                    d="M 172 144 Q 182 178 190 220"
-                    stroke="#38BDF888"
-                    strokeWidth={2.5}
-                    fill="none"
-                  />
-                  <text x={112} y={112} fill="#38BDF855" fontSize="7" fontWeight="bold">
-                    R. Niger
-                  </text>
-                  <text x={245} y={135} fill="#38BDF855" fontSize="7" fontWeight="bold">
-                    R. Benue
-                  </text>
-                  <circle cx={172} cy={144} r={2.5} fill="#38BDF8" />
-
-                  {/* Tactical Border Labels */}
-                  <text
-                    x={210}
-                    y={14}
+                    x={20}
+                    y={280}
                     fill="#34D39944"
                     fontSize="8"
                     fontWeight="bold"
                     textAnchor="middle"
                     letterSpacing="2"
                   >
-                    NIGERIA REPUBLIC
-                  </text>
-                  <text
-                    x={16}
-                    y={115}
-                    fill="#34D39944"
-                    fontSize="7"
-                    fontWeight="bold"
-                    textAnchor="middle"
-                  >
                     BENIN
                   </text>
                   <text
-                    x={358}
-                    y={115}
+                    x={636}
+                    y={70}
                     fill="#34D39944"
-                    fontSize="7"
+                    fontSize="8"
                     fontWeight="bold"
                     textAnchor="middle"
+                    letterSpacing="2"
+                  >
+                    CHAD
+                  </text>
+                  <text
+                    x={625}
+                    y={340}
+                    fill="#34D39944"
+                    fontSize="8"
+                    fontWeight="bold"
+                    textAnchor="middle"
+                    letterSpacing="2"
                   >
                     CAMEROON
                   </text>
+                  <text
+                    x={140}
+                    y={544}
+                    fill="#38BDF844"
+                    fontSize="8"
+                    fontWeight="bold"
+                    textAnchor="middle"
+                    letterSpacing="2"
+                  >
+                    GULF OF GUINEA
+                  </text>
 
-                  {/* Reporting State Polygons */}
+                  {/* Iconic River Niger & River Benue Confluence */}
+                  <path
+                    d={NIGERIA_RIVERS.riverNiger}
+                    stroke="#38BDF866"
+                    strokeWidth={2.5}
+                    fill="none"
+                  />
+                  <path
+                    d={NIGERIA_RIVERS.riverBenue}
+                    stroke="#38BDF866"
+                    strokeWidth={2.5}
+                    fill="none"
+                  />
+                  <path
+                    d={NIGERIA_RIVERS.lowerNiger}
+                    stroke="#38BDF888"
+                    strokeWidth={3}
+                    fill="none"
+                  />
+                  <circle
+                    cx={NIGERIA_RIVERS.confluence.x}
+                    cy={NIGERIA_RIVERS.confluence.y}
+                    r={3.5}
+                    fill="#38BDF8"
+                  />
+                  <text
+                    x={145}
+                    y={255}
+                    fill="#38BDF855"
+                    fontSize="8"
+                    fontWeight="bold"
+                  >
+                    R. Niger
+                  </text>
+                  <text
+                    x={410}
+                    y={315}
+                    fill="#38BDF855"
+                    fontSize="8"
+                    fontWeight="bold"
+                  >
+                    R. Benue
+                  </text>
+
+                  {/* All 36 States + FCT Polygons */}
                   {stateHeatmapData.map((st) => {
-                    const poly = STATE_MAP_POLYGONS[st.id];
-                    if (!poly) return null;
+                    const geom = NIGERIA_STATE_GEOMETRIES[st.id];
+                    if (!geom) return null;
                     const isSelected = selectedMapStateId === st.id;
+                    const isHovered = hoveredStateId === st.id;
                     const fill = getFillColor(st);
 
                     return (
                       <g
                         key={st.id}
+                        role="button"
+                        tabIndex={0}
+                        aria-label={`${st.name} State: ${st.leadingParty} leading with ${st.leadingPct}%, ${st.reportingPct}% collated. Click to inspect.`}
+                        aria-pressed={isSelected}
                         onClick={() => {
                           setSelectedMapStateId(st.id);
                           setActiveLgaState(st.name);
                         }}
-                        className="cursor-pointer transition-all duration-150"
+                        onDoubleClick={() => setInspectModalUnit(st)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            setSelectedMapStateId(st.id);
+                            setActiveLgaState(st.name);
+                            setInspectModalUnit(st);
+                          }
+                        }}
+                        onMouseEnter={() => setHoveredStateId(st.id)}
+                        onMouseLeave={() => setHoveredStateId(null)}
+                        className="cursor-pointer transition-all duration-150 focus:outline-none"
                       >
+                        <title>{`${st.name} (${st.code}) - ${st.leadingParty}: ${st.leadingPct}% | ${st.reportingPct}% collated (Double-click to inspect)`}</title>
+
+                        {/* Outer Glow Halo for Selected State */}
                         {isSelected && (
                           <path
-                            d={poly.path}
+                            d={geom.path}
                             fill="none"
                             stroke="#34D399"
-                            strokeWidth={5}
-                            strokeOpacity={0.6}
+                            strokeWidth={6}
+                            strokeOpacity={0.65}
+                            filter="url(#map-glow)"
                           />
                         )}
+
+                        {/* State Polygon Body */}
                         <path
-                          d={poly.path}
+                          d={geom.path}
                           fill={fill}
-                          fillOpacity={isSelected ? 0.95 : 0.78}
-                          stroke={isSelected ? '#FFFFFF' : '#070C09'}
-                          strokeWidth={isSelected ? 2.5 : 1.2}
+                          fillOpacity={isSelected ? 0.96 : isHovered ? 0.9 : 0.8}
+                          stroke={isSelected ? '#FFFFFF' : isHovered ? '#6EE7B7' : '#040B06'}
+                          strokeWidth={isSelected ? 2.5 : isHovered ? 1.8 : 1.1}
                         />
 
-                        {/* Contrast Badge Plate behind State Label */}
+                        {/* High-Contrast Badge Plate behind State Label */}
                         <rect
-                          x={poly.labelX - 40}
-                          y={poly.labelY - 14}
-                          width={80}
-                          height={28}
-                          rx={5}
-                          fill="#040B06EE"
-                          stroke={isSelected ? '#FDE047' : '#FFFFFF25'}
+                          x={geom.labelX - 22}
+                          y={geom.labelY - 11}
+                          width={44}
+                          height={22}
+                          rx={4}
+                          fill="#040B06F2"
+                          stroke={isSelected ? '#FDE047' : isHovered ? '#34D39988' : '#FFFFFF20'}
                           strokeWidth={isSelected ? 1.5 : 0.8}
                         />
                         <text
-                          x={poly.labelX}
-                          y={poly.labelY - 2}
+                          x={geom.labelX}
+                          y={geom.labelY - 1}
                           fill="#FFFFFF"
-                          fontSize="10"
+                          fontSize="8.5"
                           fontWeight="bold"
                           textAnchor="middle"
                         >
-                          {poly.code} · {poly.name}
+                          {geom.code}
                         </text>
                         <text
-                          x={poly.labelX}
-                          y={poly.labelY + 9}
-                          fill={isSelected ? '#FDE047' : '#FFFFFFCC'}
-                          fontSize="8"
+                          x={geom.labelX}
+                          y={geom.labelY + 8}
+                          fill={isSelected ? '#FDE047' : '#34D399'}
+                          fontSize="7"
                           fontWeight="bold"
                           textAnchor="middle"
                         >
                           {mapHeatMode === 'party'
-                            ? `${st.leadingParty} (${st.leadingPct}%)`
+                            ? `${st.leadingParty} ${st.leadingPct}%`
                             : `${st.reportingPct}%`}
                         </text>
 
+                        {/* Center Indicator Pin for Active Unit */}
                         {isSelected && (
                           <>
                             <circle
-                              cx={poly.labelX}
-                              cy={poly.labelY - 18}
-                              r={4.5}
+                              cx={geom.labelX}
+                              cy={geom.labelY - 15}
+                              r={3.5}
                               fill="#FFFFFF"
                             />
                             <circle
-                              cx={poly.labelX}
-                              cy={poly.labelY - 18}
-                              r={8.5}
+                              cx={geom.labelX}
+                              cy={geom.labelY - 15}
+                              r={7.5}
                               stroke="#FFFFFF99"
                               strokeWidth={1.5}
                               fill="none"
@@ -1171,15 +1235,25 @@ export const NigeriaHeatMap: React.FC<NigeriaHeatMapProps> = ({
 
             <div className="flex items-center gap-2">
               <button
-                onClick={() => {
-                  setSelectedStateFilter(
-                    geoLevel === 'state' ? activeSelectedState.name : activeSelectedLga.state
-                  );
-                  setActiveTab('results');
-                }}
+                onClick={() =>
+                  setInspectModalUnit(
+                    geoLevel === 'state' ? activeSelectedState : activeSelectedLga
+                  )
+                }
+                className="px-3 py-1.5 rounded-lg bg-[#15241D] hover:bg-[#1E3629] text-white border border-[#2A4435] font-bold text-xs flex items-center gap-1.5 transition shadow-sm"
+              >
+                <Maximize2 className="w-3.5 h-3.5 text-emerald-400" />
+                <span>Inspect</span>
+              </button>
+              <button
+                onClick={() =>
+                  handleAuditUnit(
+                    geoLevel === 'state' ? activeSelectedState : activeSelectedLga
+                  )
+                }
                 className="px-3 py-1.5 rounded-lg bg-[#10B981] hover:bg-emerald-400 text-black font-bold text-xs flex items-center gap-1 transition shadow-sm"
               >
-                <span>Audit Unit Collation</span>
+                <span>Audit Returns</span>
                 <ChevronRight className="w-3.5 h-3.5" />
               </button>
             </div>
@@ -1325,23 +1399,32 @@ export const NigeriaHeatMap: React.FC<NigeriaHeatMapProps> = ({
                 </div>
               </div>
 
-              {/* Action Button */}
-              <button
-                onClick={() => {
-                  setSelectedStateFilter(
-                    geoLevel === 'state' ? activeSelectedState.name : activeSelectedLga.state
-                  );
-                  setActiveTab('results');
-                }}
-                className="w-full py-2.5 px-4 rounded-xl bg-[#10B981] hover:bg-emerald-400 text-black text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-md shadow-emerald-950/40"
-              >
-                <span>
-                  Audit{' '}
-                  {geoLevel === 'state' ? activeSelectedState.name : activeSelectedLga.name}{' '}
-                  Results
-                </span>
-                <ChevronRight className="w-3.5 h-3.5" />
-              </button>
+              {/* Action Buttons Row: Inspect Full Modal + Audit Results */}
+              <div className="flex items-center gap-2 pt-1">
+                <button
+                  onClick={() =>
+                    setInspectModalUnit(
+                      geoLevel === 'state' ? activeSelectedState : activeSelectedLga
+                    )
+                  }
+                  className="flex-1 py-2.5 px-4 rounded-xl bg-[#15241D] hover:bg-[#1E3629] text-white border border-[#2A4435] text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-sm"
+                >
+                  <Maximize2 className="w-3.5 h-3.5 text-emerald-400" />
+                  <span>Inspect Telemetry</span>
+                </button>
+
+                <button
+                  onClick={() =>
+                    handleAuditUnit(
+                      geoLevel === 'state' ? activeSelectedState : activeSelectedLga
+                    )
+                  }
+                  className="flex-1 py-2.5 px-4 rounded-xl bg-[#10B981] hover:bg-emerald-400 text-black text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-md shadow-emerald-950/40"
+                >
+                  <span>Audit PUs</span>
+                  <ChevronRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
             </div>
 
             {/* Quick Search & Breakdown Table */}
@@ -1349,8 +1432,8 @@ export const NigeriaHeatMap: React.FC<NigeriaHeatMapProps> = ({
               <div className="flex items-center justify-between">
                 <h4 className="text-xs font-bold uppercase tracking-wider text-[#718579]">
                   {geoLevel === 'state'
-                    ? `State Breakdown (${filteredList.length})`
-                    : `LGA Breakdown (${filteredList.length})`}
+                    ? `Federation States (${filteredList.length})`
+                    : `${effectiveLgaState} LGAs (${filteredList.length})`}
                 </h4>
                 <input
                   type="text"
@@ -1361,7 +1444,7 @@ export const NigeriaHeatMap: React.FC<NigeriaHeatMapProps> = ({
                 />
               </div>
 
-              <div className="max-h-[180px] overflow-y-auto space-y-1.5 pr-1">
+              <div className="max-h-[220px] overflow-y-auto space-y-1.5 pr-1 no-scrollbar">
                 {filteredList.map((item) => {
                   const isSelected =
                     geoLevel === 'state'
@@ -1379,6 +1462,7 @@ export const NigeriaHeatMap: React.FC<NigeriaHeatMapProps> = ({
                         } else {
                           setSelectedMapLgaId(item.id);
                         }
+                        setInspectModalUnit(item);
                       }}
                       className={`flex items-center justify-between p-2 rounded-xl border text-xs cursor-pointer transition ${
                         isSelected
@@ -1409,6 +1493,294 @@ export const NigeriaHeatMap: React.FC<NigeriaHeatMapProps> = ({
           </div>
         )}
       </div>
+
+      {/* --------------------------------------------------------------------- */}
+      {/* Dedicated Interactive LGA District Cards Grid (Under Map in LGA mode) */}
+      {/* --------------------------------------------------------------------- */}
+      {geoLevel === 'lga' && (
+        <div className="mt-5 pt-4 border-t border-[#1C2E24] space-y-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-sm font-extrabold text-white flex items-center gap-2">
+                <MapPin className="w-4 h-4 text-emerald-400" />
+                <span>{effectiveLgaState} State LGA District Hubs ({mapLgas.length})</span>
+              </h3>
+              <p className="text-xs text-[#718579]">
+                Tap any district card to view enlarged telemetry, party breakdown, or audit its polling units.
+              </p>
+            </div>
+            <button
+              onClick={() => handleAuditUnit(activeSelectedState)}
+              className="text-xs font-bold text-emerald-400 hover:text-emerald-300 flex items-center gap-1 transition"
+            >
+              <span>Audit All {effectiveLgaState} Units</span>
+              <ChevronRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {mapLgas.map((lga) => {
+              const isSelected = selectedMapLgaId === lga.id;
+              const partyColor = PARTY_COLORS[lga.leadingParty];
+
+              return (
+                <div
+                  key={lga.id}
+                  onClick={() => {
+                    setSelectedMapLgaId(lga.id);
+                    setInspectModalUnit(lga);
+                  }}
+                  className={`p-3.5 rounded-2xl border transition-all duration-200 cursor-pointer space-y-2.5 ${
+                    isSelected
+                      ? 'bg-gradient-to-b from-[#122E1E] to-[#0A160F] border-emerald-500 shadow-lg shadow-emerald-950/40'
+                      : 'bg-[#080E0A] border-[#1C2E24] hover:border-[#2D4E3A] hover:bg-[#0B150F]'
+                  }`}
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <h4 className="text-sm font-black text-white">{lga.name}</h4>
+                      <p className="text-[11px] text-[#718579] font-medium">
+                        {lga.baseCollated} of {lga.totalPus} Polling Units Collated
+                      </p>
+                    </div>
+
+                    <span
+                      className="px-2 py-0.5 rounded-lg text-xs font-black border font-mono shrink-0"
+                      style={{
+                        backgroundColor: `${partyColor}20`,
+                        borderColor: `${partyColor}50`,
+                        color: partyColor,
+                      }}
+                    >
+                      {lga.leadingParty} {lga.leadingPct}%
+                    </span>
+                  </div>
+
+                  {/* Collation Progress Bar */}
+                  <div className="space-y-1">
+                    <div className="flex items-center justify-between text-[10px] text-[#718579]">
+                      <span className="font-semibold">Collation Progress</span>
+                      <span className="font-bold text-emerald-400">{lga.reportingPct}%</span>
+                    </div>
+                    <div className="w-full h-1.5 rounded-full bg-[#121F18] overflow-hidden">
+                      <div
+                        className="h-full rounded-full transition-all duration-300"
+                        style={{
+                          width: `${lga.reportingPct}%`,
+                          backgroundColor: partyColor,
+                        }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Bottom Stats & Inspect Button */}
+                  <div className="flex items-center justify-between pt-1 border-t border-[#1C2E24]/60 text-xs">
+                    <span className="text-[11px] text-[#94A89D] font-mono">
+                      {lga.totalVotes.toLocaleString()} votes ({lga.margin})
+                    </span>
+
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setInspectModalUnit(lga);
+                      }}
+                      className="text-xs font-bold text-emerald-400 hover:text-white flex items-center gap-1 transition"
+                    >
+                      <span>Inspect</span>
+                      <ExternalLink className="w-3 h-3" />
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* --------------------------------------------------------------------- */}
+      {/* Tactical Unit Collation Inspection Modal (Full Interactive Telemetry) */}
+      {/* --------------------------------------------------------------------- */}
+      {inspectModalUnit && (
+        <div
+          onClick={() => setInspectModalUnit(null)}
+          className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="bg-[#0E1712] border border-[#1C2E24] rounded-3xl max-w-xl w-full p-5 sm:p-6 shadow-2xl space-y-5 animate-in fade-in zoom-in-95 my-8 text-white"
+          >
+            {/* Modal Header */}
+            <div className="flex items-center justify-between pb-4 border-b border-[#1C2E24]">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400">
+                  {'zone' in inspectModalUnit ? (
+                    <Globe className="w-5 h-5" />
+                  ) : (
+                    <MapPin className="w-5 h-5" />
+                  )}
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-lg font-black text-white">{inspectModalUnit.name}</h3>
+                    <span className="px-2 py-0.5 rounded-md bg-white/10 text-white font-mono font-bold text-xs">
+                      {'zone' in inspectModalUnit
+                        ? inspectModalUnit.code
+                        : inspectModalUnit.state}
+                    </span>
+                  </div>
+                  <p className="text-xs text-[#718579]">
+                    {'zone' in inspectModalUnit
+                      ? `${inspectModalUnit.zone} · National Administrative Hub`
+                      : `${inspectModalUnit.state} State Electoral District`}
+                  </p>
+                </div>
+              </div>
+
+              <button
+                onClick={() => setInspectModalUnit(null)}
+                className="p-1.5 rounded-xl text-[#718579] hover:text-white hover:bg-[#15241D] transition"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Collation Progress Bar Strip */}
+            <div className="bg-[#080E0A] border border-[#1C2E24] p-4 rounded-2xl space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-[#718579] uppercase tracking-wider flex items-center gap-1.5">
+                  <BarChart3 className="w-3.5 h-3.5 text-emerald-400" />
+                  Polling Unit Collation Returns
+                </span>
+                <span className="text-sm font-black text-emerald-400">
+                  {inspectModalUnit.reportingPct}% Complete
+                </span>
+              </div>
+
+              <div className="w-full h-2.5 rounded-full bg-[#121F18] overflow-hidden">
+                <div
+                  className="h-full rounded-full bg-gradient-to-r from-emerald-600 to-emerald-400 transition-all duration-500"
+                  style={{ width: `${inspectModalUnit.reportingPct}%` }}
+                />
+              </div>
+
+              <div className="flex items-center justify-between text-xs text-[#94A89D]">
+                <span>
+                  <strong>{inspectModalUnit.baseCollated.toLocaleString()}</strong> of{' '}
+                  <strong>{inspectModalUnit.totalPus.toLocaleString()}</strong> PUs Officially Collated
+                </span>
+                <span className="text-emerald-400 font-semibold flex items-center gap-1">
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  INEC Verified
+                </span>
+              </div>
+            </div>
+
+            {/* Leaderboard Callout */}
+            <div
+              className="p-4 rounded-2xl border flex items-center justify-between"
+              style={{
+                backgroundColor: `${PARTY_COLORS[inspectModalUnit.leadingParty]}15`,
+                borderColor: `${PARTY_COLORS[inspectModalUnit.leadingParty]}50`,
+              }}
+            >
+              <div>
+                <span className="text-[10px] font-black uppercase tracking-wider text-[#718579] block">
+                  Projected Leader
+                </span>
+                <h4 className="text-base font-black text-white mt-0.5">
+                  {inspectModalUnit.leadingCandidate}
+                </h4>
+                <p className="text-xs font-semibold text-[#94A89D]">
+                  Margin of Lead: <strong className="text-white">{inspectModalUnit.margin}</strong>
+                </p>
+              </div>
+
+              <div
+                className="px-3.5 py-1.5 rounded-xl font-black text-sm border"
+                style={{
+                  backgroundColor: `${PARTY_COLORS[inspectModalUnit.leadingParty]}25`,
+                  borderColor: PARTY_COLORS[inspectModalUnit.leadingParty],
+                  color: PARTY_COLORS[inspectModalUnit.leadingParty],
+                }}
+              >
+                {inspectModalUnit.leadingParty} ({inspectModalUnit.leadingPct}%)
+              </div>
+            </div>
+
+            {/* Comprehensive Party Vote Distribution with Full-Size Bars */}
+            <div className="space-y-2.5">
+              <h4 className="text-xs font-extrabold uppercase tracking-wider text-[#718579]">
+                Candidate & Party Distribution ({inspectModalUnit.totalVotes.toLocaleString()} Total Votes)
+              </h4>
+
+              <div className="space-y-2">
+                {inspectModalUnit.shares.map((share) => {
+                  const pColor = PARTY_COLORS[share.party];
+                  return (
+                    <div
+                      key={share.party}
+                      className="p-3 rounded-xl bg-[#080E0A] border border-[#1C2E24] space-y-1.5"
+                    >
+                      <div className="flex items-center justify-between text-xs">
+                        <div className="flex items-center gap-2">
+                          <span
+                            className="w-2.5 h-2.5 rounded-full"
+                            style={{ backgroundColor: pColor }}
+                          />
+                          <span className="font-extrabold text-white text-sm">
+                            {share.party}
+                          </span>
+                        </div>
+
+                        <div className="flex items-center gap-3 font-mono">
+                          <span className="text-xs text-[#94A89D]">
+                            {share.votes.toLocaleString()} votes
+                          </span>
+                          <span className="text-sm font-black text-white" style={{ color: pColor }}>
+                            {share.pct.toFixed(1)}%
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="w-full h-1.5 rounded-full bg-[#121F18] overflow-hidden">
+                        <div
+                          className="h-full rounded-full transition-all duration-300"
+                          style={{
+                            width: `${share.pct}%`,
+                            backgroundColor: pColor,
+                          }}
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Modal Bottom Actions */}
+            <div className="flex flex-col sm:flex-row items-center gap-2 pt-2 border-t border-[#1C2E24]">
+              {'zone' in inspectModalUnit && (
+                <button
+                  onClick={() => handleDrilldownLga(inspectModalUnit.name)}
+                  className="w-full sm:flex-1 py-2.5 px-4 rounded-xl bg-[#15241D] hover:bg-[#1E3629] text-white border border-[#2A4435] text-xs font-bold transition flex items-center justify-center gap-1.5"
+                >
+                  <MapPin className="w-3.5 h-3.5 text-emerald-400" />
+                  <span>Explore State LGAs</span>
+                </button>
+              )}
+
+              <button
+                onClick={() => handleAuditUnit(inspectModalUnit)}
+                className="w-full sm:flex-1 py-2.5 px-4 rounded-xl bg-[#10B981] hover:bg-emerald-400 text-black text-xs font-black transition flex items-center justify-center gap-1.5 shadow-md shadow-emerald-950/50"
+              >
+                <ShieldCheck className="w-4 h-4" />
+                <span>Audit Polling Units in {inspectModalUnit.name}</span>
+                <ChevronRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
