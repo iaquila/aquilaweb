@@ -274,7 +274,7 @@ export const DashboardView: React.FC = () => {
       )}
 
       {/* Two-Column Responsive Section: Snapshot Performance & AI Neural Projection */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+      <div className={`grid grid-cols-1 ${isOfficerOrAbove ? 'lg:grid-cols-2' : ''} gap-6 items-start`}>
         {/* 3. Candidate Snapshot Performance (app/(app)/(tabs)/index.tsx lines 326-463) */}
       <div className="rounded-2xl border border-[#1C2E24] bg-[#0E1712] p-5 shadow-lg space-y-4">
         <div className="flex items-center justify-between">
@@ -419,8 +419,9 @@ export const DashboardView: React.FC = () => {
         </div>
       </div>
 
-      {/* 4. AI Election Projection Engine (app/(app)/(tabs)/index.tsx lines 466-714) */}
-      <div className="rounded-2xl border-2 border-[#10B981] bg-[#0E1712] p-5 shadow-xl space-y-4">
+        {/* 4. AI Election Projection Engine (For Election Officer & Above) */}
+        {isOfficerOrAbove && (
+          <div className="rounded-2xl border-2 border-[#10B981] bg-[#0E1712] p-5 shadow-xl space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-xl bg-[#10B981] text-black flex items-center justify-center">
@@ -628,10 +629,8 @@ export const DashboardView: React.FC = () => {
           </div>
         )}
       </div>
+    )}
       </div>
-
-      {/* 4.5. Live Nigeria Geographic Heat Map (For Field Agents & Polling Agents) */}
-      {!isOfficerOrAbove && <NigeriaHeatMap />}
 
       {/* Two-Column Responsive Section: Assigned Polling Units & Operations / Quick Controls */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
