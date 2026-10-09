@@ -28,6 +28,8 @@ export const LoginView: React.FC = () => {
       roleTitle: 'Field Agent (Cluster Supervisor)',
       description: 'Connected via station credentials.',
       assignedPus: ['pu-s25-lga-1-1', 'pu-s25-lga-1-2', 'pu-s25-lga-1-3'],
+      organizationId: 'org-default',
+      organizationName: 'iAquila Observer Network',
     });
   };
 
@@ -43,6 +45,8 @@ export const LoginView: React.FC = () => {
         roleTitle: 'Polling Unit Agent',
         description: 'Stationed exclusively at PU 001 Ikeja Grammar School.',
         assignedPus: ['pu-s25-lga-1-1'],
+        organizationId: 'org-default',
+        organizationName: 'iAquila Observer Network',
       });
     } else if (role === 'officer') {
       demoEmail = 'officer@iaquila.com.ng';
@@ -53,6 +57,8 @@ export const LoginView: React.FC = () => {
         roleTitle: 'Election Officer (Supervisory)',
         description: 'National election situation room supervisor with collation audit access.',
         assignedPus: [],
+        organizationId: 'org-default',
+        organizationName: 'iAquila Observer Network',
       });
     } else {
       loginWithAccount({
@@ -62,6 +68,8 @@ export const LoginView: React.FC = () => {
         roleTitle: 'Field Agent (Cluster Supervisor)',
         description: 'Assigned to 3 Polling Units in Ikeja cluster for parallel vote tabulation.',
         assignedPus: ['pu-s25-lga-1-1', 'pu-s25-lga-1-2', 'pu-s25-lga-1-3'],
+        organizationId: 'org-default',
+        organizationName: 'iAquila Observer Network',
       });
     }
   };
