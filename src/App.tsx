@@ -64,26 +64,27 @@ export const AppContent: React.FC = () => {
       <IncidentDetailModal />
 
       {/* Footer */}
-      <footer className="border-t border-[#1C2E24] bg-[#0E1712] py-6 px-4 text-center text-xs text-[#718579]">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <span className="font-extrabold text-white">iAQUILA</span>
-            <span>• Independent Election Monitoring &amp; Parallel Collation System</span>
-          </div>
-          <div className="flex items-center gap-4 text-[11px]">
-            <a href="/privacy.html" target="_blank" rel="noopener noreferrer" className="hover:text-emerald-400 transition">Privacy Policy</a>
-            <span>•</span>
-            <a href="/terms.html" target="_blank" rel="noopener noreferrer" className="hover:text-emerald-400 transition">Terms &amp; Conditions</a>
-            <span>•</span>
-            <a href="/deletion.html" target="_blank" rel="noopener noreferrer" className="hover:text-emerald-400 transition">Data Deletion</a>
-            <span>•</span>
-            <a href="/support.html" target="_blank" rel="noopener noreferrer" className="hover:text-emerald-400 transition">Support</a>
-          </div>
-          <p className="text-[11px]">
-            Certified for Accredited Observer Missions • Federal Republic of Nigeria
-          </p>
-        </div>
-      </footer>
+      {/* Footer */}
+<footer className="border-t border-[#1C2E24] bg-[#0E1712] py-6 px-4 text-center text-xs text-[#718579]">
+  <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+    <div className="flex items-center gap-2">
+      <span className="font-extrabold text-white">iAQUILA</span>
+      <span>• Independent Election Monitoring &amp; Parallel Collation System</span>
+    </div>
+    
+    <div className="flex flex-wrap items-center justify-center gap-4 text-[11px]">
+      <a href="/privacy.html" target="_blank" rel="noopener noreferrer" className="hover:text-emerald-400 transition">Privacy Policy</a>
+      <span>•</span>
+      <a href="/terms.html" target="_blank" rel="noopener noreferrer" className="hover:text-emerald-400 transition">Terms &amp; Conditions</a>
+      <span>•</span>
+      <a href="/deletion.html" target="_blank" rel="noopener noreferrer" className="hover:text-emerald-400 transition">Data Deletion</a>
+      <span>•</span>
+      <a href="/support.html" target="_blank" rel="noopener noreferrer" className="hover:text-emerald-400 transition">Support</a>
+      <span>•</span>
+      <span>Federal Republic of Nigeria</span>
+    </div>
+  </div>
+</footer>
     </div>
   );
 };

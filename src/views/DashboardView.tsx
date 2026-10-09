@@ -21,11 +21,11 @@ import {
 import { NigeriaHeatMap } from '../components/NigeriaHeatMap';
 
 const PARTY_COLORS: Record<string, string> = {
-  APC: '#0D6338',
-  PDP: '#DC2626',
-  LP: '#16A34A',
-  NNPP: '#2563EB',
-  APGA: '#D97706',
+  CPA: '#0D6338',
+  DPP: '#DC2626',
+  PL: '#16A34A',
+  PPNN: '#2563EB',
+  PAGA: '#D97706',
 };
 
 const BASE_VOTES_MAP: Record<string, number> = {
