@@ -1,6 +1,7 @@
 import React from 'react';
 import { useAppStore, PREDEFINED_ACCOUNTS } from '../store';
 import { electionService } from '../services/electionService';
+import { Card } from '../components/Card';
 import {
   Star,
   CheckCircle2,
@@ -26,7 +27,7 @@ export const ProfileView: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Left Column: Observer Credential Card (5 cols) */}
         <div className="lg:col-span-5 space-y-6">
-          <div className="bg-[#0E1712] border border-[#1C2E24] rounded-3xl p-6 shadow-xl space-y-5">
+          <Card className="p-6 shadow-xl space-y-5">
             <div className="flex items-center gap-3.5 pb-4 border-b border-[#1C2E24]">
               <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#0D6338] to-[#10B981] p-0.5 flex items-center justify-center text-white text-xl font-extrabold shadow-lg shadow-emerald-950/50">
                 {user?.name.slice(0, 2).toUpperCase() || 'iAQ'}
@@ -114,13 +115,13 @@ export const ProfileView: React.FC = () => {
                 })}
               </div>
             </div>
-          </div>
+          </Card>
         </div>
 
         {/* Right Column: Persona Switcher & Field System Telemetry (7 cols) */}
         <div className="lg:col-span-7 space-y-6">
           {/* Persona Switcher */}
-          <div className="bg-[#0E1712] border border-[#1C2E24] rounded-3xl p-6 shadow-xl space-y-4">
+          <Card className="p-6 shadow-xl space-y-4">
             <div>
               <h2 className="text-base font-extrabold text-white">
                 Test Role Persona Switcher
@@ -179,10 +180,10 @@ export const ProfileView: React.FC = () => {
                 );
               })}
             </div>
-          </div>
+          </Card>
 
           {/* Local Storage & Device Integrity */}
-          <div className="bg-[#0E1712] border border-[#1C2E24] rounded-3xl p-6 shadow-xl space-y-4">
+          <Card className="p-6 shadow-xl space-y-4">
             <div className="flex items-center justify-between pb-3 border-b border-[#1C2E24]">
               <div className="flex items-center gap-2.5">
                 <HardDrive className="w-5 h-5 text-emerald-400" />
@@ -221,7 +222,7 @@ export const ProfileView: React.FC = () => {
                 </span>
               </div>
             </div>
-          </div>
+          </Card>
 
           {/* Sign Out Button (app/(app)/(tabs)/profile.tsx line 277) */}
           <button

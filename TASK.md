@@ -86,16 +86,23 @@
   * Field & Polling Unit Dashboard Body Compaction:
     - Candidate Snapshot Performance: Refactored candidate cards into a compact 4-column responsive grid (`grid grid-cols-2 sm:grid-cols-4 gap-2.5`) wrapped in the `<Card>` primitive. Reduced section height from 492px to 152px (saving 340px of vertical space).
     - Polling Unit Agent Scorecard & Column Balance: Added operational telemetry scorecard (turnout rate, BVAS status, accredited counts) for the single assigned PU, balancing left column (289px) with right column (546px) and eliminating blank voids. Field Agent columns achieve balanced height (479px vs 546px).
-    - Strict Lint & Typecheck Pass: Eliminated unused variables, passing `eslint .` with 0 errors and 0 warnings, and `tsc --noEmit` with 0 type errors.
+  * Multi-Tab Screen Audit & ProfileView Primitive Standardization:
+    - Standardized `ProfileView.tsx` with centralized `<Card>` primitives across Observer Credential, Test Role Persona Switcher, and Device Integrity cards.
+    - Automated sequential DOM audit across all 7 tab screens (`dashboard`, `elections`, `results`, `incidents`, `locations`, `parties`, `profile`):
+      * 0 horizontal overflow (`scrollWidth === clientWidth`) across all screens.
+      * Balanced column heights across two-column views (e.g. `ElectionsView`: 389px/803px @ 774px height; `LocationsView`: 389px/803px @ 522px height).
+      * Debounced navigation transitions firing reliably with 0 layout jitter.
 
 ## Verification Status
 Staff Invariant Audit: INVARIANTS VERIFIED
 - `npm run lint` (`eslint .`): Exited with code 0 (0 errors, 0 warnings).
 - `tsc --noEmit`: Exited with code 0 (0 type errors).
-- `vite build`: Clean production bundle built in 7.24s.
-- Section Heights (DevTools DOM inspection):
+- `vite build`: Clean production bundle built in 6.00s.
+- Section Heights & Balances (DevTools DOM inspection):
   * Field/PU Candidate Snapshot: Compacted from 492px → 152px (-340px scroll overhead).
   * Field Agent Two-Column Grid: Left col 479px vs Right col 546px (balanced).
   * Polling Unit Agent Two-Column Grid: Left col 289px vs Right col 546px (balanced with operational scorecard).
-- Multi-viewport DOM verification: 0 horizontal overflow (`scrollWidth === clientWidth`) across 360px, 375px, 768px, and 1440px displays.
+  * Elections Grid: Left col 774px vs Right col 774px (perfect 1:1 balance).
+  * Locations Grid: Left col 522px vs Right col 522px (perfect 1:1 balance).
+- Multi-viewport & Multi-Tab DOM verification: 0 horizontal overflow (`scrollWidth === clientWidth`) across all 7 views.
 
