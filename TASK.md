@@ -50,7 +50,7 @@
   * Legal URLs & Subdomain Alignment: Fixed in-app legal links across `App.tsx` and `LoginView.tsx` to point directly to `https://iaquila.com.ng/{privacy,terms,deletion,support}.html` (main domain, returning HTTP 200), eliminating the invalid `app.` prefix that triggered 404s on the web app subdomain.
   * Brand Logo Favicon Correction: Restored the authentic iAquila green eagle-head brand mark for `favicon.png` across both `public/assets/` and root `assets/`, replacing the stale 268-byte generic Expo triangle icon. Configured `apple-touch-icon` in `index.html`.
   * Public Directory Restoration (Without Landing or Duplicate HTML): Restored `public/` directory containing `.htaccess` (with 301 redirect rules to `https://iaquila.com.ng` where cPanel's `public_html` serves the canonical documents, plus LiteSpeed SPA rewrite rules and caching) and authentic brand assets in `public/assets/`, keeping legacy `landing/` and redundant HTML copies removed.
-  * CI/CD Modernization: Upgraded GitHub Actions (`actions/checkout@v7`, `actions/setup-node@v7`, `actions/upload-pages-artifact@v5`, `actions/deploy-pages@v5`) across `.github/workflows/{ci,deploy,deploy-cpanel}.yml` to target Node 24 natively, eliminating deprecated Node 20 runner warnings.
+  * CI/CD Modernization: Upgraded GitHub Actions (`actions/checkout@v7`, `actions/setup-node@v7`, `actions/upload-pages-artifact@v5`, `actions/deploy-pages@v5`, `SamKirkland/FTP-Deploy-Action@v4.4.0`) across `.github/workflows/{ci,deploy,deploy-cpanel}.yml` to target Node 24 natively, completely eliminating deprecated Node 20 runner warnings.
 
 ## Verification Status
 Staff Invariant Audit: INVARIANTS VERIFIED
