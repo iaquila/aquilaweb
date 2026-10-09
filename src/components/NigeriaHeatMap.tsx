@@ -246,11 +246,11 @@ export type LgaCollation = {
   baseCollated: number;
   totalVotes: number;
   reportingPct: number;
-  leadingParty: 'APC' | 'PDP' | 'LP' | 'NNPP';
+  leadingParty: 'CPA' | 'DPP' | 'PL' | 'PPNN';
   leadingCandidate: string;
   leadingPct: string;
   margin: string;
-  shares: Array<{ party: 'APC' | 'PDP' | 'LP' | 'NNPP'; votes: number; pct: number }>;
+  shares: Array<{ party: 'CPA' | 'DPP' | 'PL' | 'PPNN'; votes: number; pct: number }>;
 };
 
 export type StateCollation = {
@@ -263,18 +263,18 @@ export type StateCollation = {
   baseCollated: number;
   totalVotes: number;
   reportingPct: number;
-  leadingParty: 'APC' | 'PDP' | 'LP' | 'NNPP';
+  leadingParty: 'CPA' | 'DPP' | 'PL' | 'PPNN';
   leadingCandidate: string;
   leadingPct: string;
   margin: string;
-  shares: Array<{ party: 'APC' | 'PDP' | 'LP' | 'NNPP'; votes: number; pct: number }>;
+  shares: Array<{ party: 'CPA' | 'DPP' | 'PL' | 'PPNN'; votes: number; pct: number }>;
 };
 
-const PARTY_COLORS: Record<'APC' | 'PDP' | 'LP' | 'NNPP', string> = {
-  APC: '#10B981',
-  PDP: '#EF4444',
-  LP: '#F59E0B',
-  NNPP: '#3B82F6',
+const PARTY_COLORS: Record<'CPA' | 'DPP' | 'PL' | 'PPNN', string> = {
+  CPA: '#10B981',
+  DPP: '#EF4444',
+  PL: '#F59E0B',
+  PPNN: '#3B82F6',
 };
 
 const DENSITY_RAMP = [
@@ -305,34 +305,34 @@ export const NigeriaHeatMap: React.FC<NigeriaHeatMapProps> = ({
   // ---------------------------------------------------------------------------
   const lgaHeatmapData: LgaCollation[] = useMemo(() => {
     const lgaBases = [
-      { id: 'lga-ikeja', name: 'Ikeja LGA', state: 'Lagos', totalPus: 450, baseCollated: 412, baseVotes: { APC: 42350, PDP: 28140, LP: 21980, NNPP: 3200 } },
-      { id: 'lga-mainland', name: 'Lagos Mainland', state: 'Lagos', totalPus: 380, baseCollated: 345, baseVotes: { APC: 27800, PDP: 35900, LP: 18450, NNPP: 2800 } },
-      { id: 'lga-alimosho', name: 'Alimosho LGA', state: 'Lagos', totalPus: 620, baseCollated: 540, baseVotes: { APC: 41200, PDP: 22400, LP: 53100, NNPP: 4600 } },
-      { id: 'lga-etiosa', name: 'Eti-Osa LGA', state: 'Lagos', totalPus: 340, baseCollated: 298, baseVotes: { APC: 24600, PDP: 14200, LP: 39800, NNPP: 2100 } },
-      { id: 'lga-surulere', name: 'Surulere LGA', state: 'Lagos', totalPus: 395, baseCollated: 360, baseVotes: { APC: 36400, PDP: 19800, LP: 31200, NNPP: 3100 } },
-      { id: 'lga-kosofe', name: 'Kosofe LGA', state: 'Lagos', totalPus: 310, baseCollated: 275, baseVotes: { APC: 30100, PDP: 24500, LP: 19400, NNPP: 2950 } },
-      { id: 'lga-fagge', name: 'Fagge LGA', state: 'Kano', totalPus: 320, baseCollated: 292, baseVotes: { APC: 18400, PDP: 9600, LP: 3100, NNPP: 58700 } },
-      { id: 'lga-tarauni', name: 'Tarauni LGA', state: 'Kano', totalPus: 280, baseCollated: 241, baseVotes: { APC: 15200, PDP: 8100, LP: 2600, NNPP: 46300 } },
-      { id: 'lga-nassarawa-kn', name: 'Nassarawa LGA', state: 'Kano', totalPus: 350, baseCollated: 305, baseVotes: { APC: 22100, PDP: 11400, LP: 3900, NNPP: 54200 } },
-      { id: 'lga-obio-akpor', name: 'Obio-Akpor LGA', state: 'Rivers', totalPus: 420, baseCollated: 381, baseVotes: { APC: 19800, PDP: 47200, LP: 24600, NNPP: 1800 } },
-      { id: 'lga-phalga', name: 'Port Harcourt LGA', state: 'Rivers', totalPus: 300, baseCollated: 256, baseVotes: { APC: 16400, PDP: 28900, LP: 24700, NNPP: 1400 } },
-      { id: 'lga-amac', name: 'AMAC Area Council', state: 'FCT', totalPus: 380, baseCollated: 342, baseVotes: { APC: 18900, PDP: 21700, LP: 51400, NNPP: 2300 } },
-      { id: 'lga-bwari', name: 'Bwari Area Council', state: 'FCT', totalPus: 220, baseCollated: 186, baseVotes: { APC: 9800, PDP: 11200, LP: 28600, NNPP: 1100 } },
-      { id: 'lga-kaduna-north', name: 'Kaduna North LGA', state: 'Kaduna', totalPus: 340, baseCollated: 295, baseVotes: { APC: 38200, PDP: 29400, LP: 12100, NNPP: 11200 } },
-      { id: 'lga-kaduna-south', name: 'Kaduna South LGA', state: 'Kaduna', totalPus: 310, baseCollated: 260, baseVotes: { APC: 31500, PDP: 33800, LP: 15400, NNPP: 8900 } },
-      { id: 'lga-ibadan-north', name: 'Ibadan North LGA', state: 'Oyo', totalPus: 410, baseCollated: 375, baseVotes: { APC: 39100, PDP: 36200, LP: 18700, NNPP: 2400 } },
-      { id: 'lga-ibadan-sw', name: 'Ibadan South-West LGA', state: 'Oyo', totalPus: 360, baseCollated: 318, baseVotes: { APC: 34800, PDP: 31200, LP: 16900, NNPP: 1900 } },
-      { id: 'lga-enugu-north', name: 'Enugu North LGA', state: 'Enugu', totalPus: 290, baseCollated: 270, baseVotes: { APC: 4200, PDP: 12800, LP: 58400, NNPP: 800 } },
-      { id: 'lga-nsukka', name: 'Nsukka LGA', state: 'Enugu', totalPus: 320, baseCollated: 285, baseVotes: { APC: 5100, PDP: 14200, LP: 61200, NNPP: 950 } },
-      { id: 'lga-maiduguri', name: 'Maiduguri LGA', state: 'Borno', totalPus: 380, baseCollated: 340, baseVotes: { APC: 54200, PDP: 19800, LP: 4100, NNPP: 8300 } },
-      { id: 'lga-jere', name: 'Jere LGA', state: 'Borno', totalPus: 290, baseCollated: 245, baseVotes: { APC: 41800, PDP: 16200, LP: 3200, NNPP: 6400 } },
+      { id: 'lga-ikeja', name: 'Ikeja LGA', state: 'Lagos', totalPus: 450, baseCollated: 412, baseVotes: { CPA: 42350, DPP: 28140, PL: 21980, PPNN: 3200 } },
+      { id: 'lga-mainland', name: 'Lagos Mainland', state: 'Lagos', totalPus: 380, baseCollated: 345, baseVotes: { CPA: 27800, DPP: 35900, PL: 18450, PPNN: 2800 } },
+      { id: 'lga-alimosho', name: 'Alimosho LGA', state: 'Lagos', totalPus: 620, baseCollated: 540, baseVotes: { CPA: 41200, DPP: 22400, PL: 53100, PPNN: 4600 } },
+      { id: 'lga-etiosa', name: 'Eti-Osa LGA', state: 'Lagos', totalPus: 340, baseCollated: 298, baseVotes: { CPA: 24600, DPP: 14200, PL: 39800, PPNN: 2100 } },
+      { id: 'lga-surulere', name: 'Surulere LGA', state: 'Lagos', totalPus: 395, baseCollated: 360, baseVotes: { CPA: 36400, DPP: 19800, PL: 31200, PPNN: 3100 } },
+      { id: 'lga-kosofe', name: 'Kosofe LGA', state: 'Lagos', totalPus: 310, baseCollated: 275, baseVotes: { CPA: 30100, DPP: 24500, PL: 19400, PPNN: 2950 } },
+      { id: 'lga-fagge', name: 'Fagge LGA', state: 'Kano', totalPus: 320, baseCollated: 292, baseVotes: { CPA: 18400, DPP: 9600, PL: 3100, PPNN: 58700 } },
+      { id: 'lga-tarauni', name: 'Tarauni LGA', state: 'Kano', totalPus: 280, baseCollated: 241, baseVotes: { CPA: 15200, DPP: 8100, PL: 2600, PPNN: 46300 } },
+      { id: 'lga-nassarawa-kn', name: 'Nassarawa LGA', state: 'Kano', totalPus: 350, baseCollated: 305, baseVotes: { CPA: 22100, DPP: 11400, PL: 3900, PPNN: 54200 } },
+      { id: 'lga-obio-akpor', name: 'Obio-Akpor LGA', state: 'Rivers', totalPus: 420, baseCollated: 381, baseVotes: { CPA: 19800, DPP: 47200, PL: 24600, PPNN: 1800 } },
+      { id: 'lga-phalga', name: 'Port Harcourt LGA', state: 'Rivers', totalPus: 300, baseCollated: 256, baseVotes: { CPA: 16400, DPP: 28900, PL: 24700, PPNN: 1400 } },
+      { id: 'lga-amac', name: 'AMAC Area Council', state: 'FCT', totalPus: 380, baseCollated: 340, baseVotes: { CPA: 22100, DPP: 11400, PL: 3900, PPNN: 54200 } },
+      { id: 'lga-bwari', name: 'Bwari Area Council', state: 'FCT', totalPus: 220, baseCollated: 186, baseVotes: { CPA: 9800, DPP: 11200, PL: 28600, NNPP: 1100 } },
+      { id: 'lga-kaduna-north', name: 'Kaduna North LGA', state: 'Kaduna', totalPus: 340, baseCollated: 295, baseVotes: { CPA: 38200, DPP: 29400, PL: 12100, NNPP: 11200 } },
+      { id: 'lga-kaduna-south', name: 'Kaduna South LGA', state: 'Kaduna', totalPus: 310, baseCollated: 260, baseVotes: { CPA: 31500, DPP: 33800, PL: 15400, NNPP: 8900 } },
+      { id: 'lga-ibadan-north', name: 'Ibadan North LGA', state: 'Oyo', totalPus: 410, baseCollated: 375, baseVotes: { CPA: 39100, DPP: 36200, PL: 18700, NNPP: 2400 } },
+      { id: 'lga-ibadan-sw', name: 'Ibadan South-West LGA', state: 'Oyo', totalPus: 360, baseCollated: 318, baseVotes: { CPA: 34800, DPP: 31200, PL: 16900, NNPP: 1900 } },
+      { id: 'lga-enugu-north', name: 'Enugu North LGA', state: 'Enugu', totalPus: 290, baseCollated: 270, baseVotes: { CPA: 4200, DPP: 12800, PL: 58400, NNPP: 800 } },
+      { id: 'lga-nsukka', name: 'Nsukka LGA', state: 'Enugu', totalPus: 320, baseCollated: 285, baseVotes: { CPA: 5100, DPP: 14200, PL: 61200, NNPP: 950 } },
+      { id: 'lga-maiduguri', name: 'Maiduguri LGA', state: 'Borno', totalPus: 380, baseCollated: 340, baseVotes: { CPA: 54200, DPP: 19800, PL: 4100, NNPP: 8300 } },
+      { id: 'lga-jere', name: 'Jere LGA', state: 'Borno', totalPus: 290, baseCollated: 245, baseVotes: { CPA: 41800, DPP: 16200, PL: 3200, NNPP: 6400 } },
     ];
 
     const candidateNames: Record<string, string> = {
-      APC: 'Bola Ahmed Tinubu',
-      PDP: 'Atiku Abubakar',
-      LP: 'Peter Obi',
-      NNPP: 'Rabiu Kwankwaso',
+      CPA: 'Ahmed Okwute',
+      DPP: 'Abubakuar Matthew',
+      PL: 'Peter Muhammed',
+      PPNN: 'Borro Nassiru',
     };
 
     return lgaBases.map((base) => {
@@ -345,10 +345,10 @@ export const NigeriaHeatMap: React.FC<NigeriaHeatMapProps> = ({
 
       const dynamicVotes = { ...base.baseVotes };
       const candMap: Record<string, keyof typeof dynamicVotes> = {
-        cand1: 'APC',
-        cand2: 'PDP',
-        cand3: 'LP',
-        cand4: 'NNPP',
+        cand1: 'CPA',
+        cand2: 'DPP',
+        cand3: 'PL',
+        cand4: 'PPNN',
       };
       matchingStoreResults.forEach((r) => {
         if (r.candidateVotes) {
@@ -362,7 +362,7 @@ export const NigeriaHeatMap: React.FC<NigeriaHeatMapProps> = ({
       });
 
       const totalVotes =
-        dynamicVotes.APC + dynamicVotes.PDP + dynamicVotes.LP + dynamicVotes.NNPP;
+        dynamicVotes.CPA + dynamicVotes.DPP + dynamicVotes.PL + dynamicVotes.PPNN;
 
       const shares = (
         Object.entries(dynamicVotes) as Array<[LgaCollation['leadingParty'], number]>
@@ -414,10 +414,10 @@ export const NigeriaHeatMap: React.FC<NigeriaHeatMapProps> = ({
     };
 
     const candidateNames: Record<string, string> = {
-      APC: 'Bola Ahmed Tinubu',
-      PDP: 'Atiku Abubakar',
-      LP: 'Peter Obi',
-      NNPP: 'Rabiu Kwankwaso',
+      CPA: 'Ahmed Okwute',
+      DPP: 'Abubakuar Matthew',
+      PL: 'Peter Muhammed',
+      PPNN: 'Borro Nassiru',
     };
 
     const byState = new Map<
@@ -425,7 +425,7 @@ export const NigeriaHeatMap: React.FC<NigeriaHeatMapProps> = ({
       {
         totalPus: number;
         baseCollated: number;
-        votes: Record<'APC' | 'PDP' | 'LP' | 'NNPP', number>;
+        votes: Record<'CPA' | 'DPP' | 'PL' | 'PPNN', number>;
         lgaCount: number;
       }
     >();
@@ -434,12 +434,12 @@ export const NigeriaHeatMap: React.FC<NigeriaHeatMapProps> = ({
       const entry = byState.get(lga.state) ?? {
         totalPus: 0,
         baseCollated: 0,
-        votes: { APC: 0, PDP: 0, LP: 0, NNPP: 0 },
+        votes: { CPA: 0, DPP: 0, PL: 0, PPNN: 0 },
         lgaCount: 0,
       };
       entry.totalPus += lga.totalPus;
       entry.baseCollated += lga.baseCollated;
-      (Object.keys(entry.votes) as Array<'APC' | 'PDP' | 'LP' | 'NNPP'>).forEach((p) => {
+      (Object.keys(entry.votes) as Array<'CPA' | 'DPP' | 'PL' | 'PPNN'>).forEach((p) => {
         const share = lga.shares.find((s) => s.party === p);
         entry.votes[p] += share?.votes ?? 0;
       });
@@ -449,7 +449,7 @@ export const NigeriaHeatMap: React.FC<NigeriaHeatMapProps> = ({
 
     return [...byState.entries()].map(([state, entry]) => {
       const totalVotes =
-        entry.votes.APC + entry.votes.PDP + entry.votes.LP + entry.votes.NNPP;
+        entry.votes.CPA + entry.votes.DPP + entry.votes.PL + entry.votes.PPNN;
       const shares = (
         Object.entries(entry.votes) as Array<[StateCollation['leadingParty'], number]>
       )
@@ -534,7 +534,7 @@ export const NigeriaHeatMap: React.FC<NigeriaHeatMapProps> = ({
       : 88;
 
   // Fill color calculation
-  const getFillColor = (item: { leadingParty: 'APC' | 'PDP' | 'LP' | 'NNPP'; reportingPct: number }) => {
+  const getFillColor = (item: { leadingParty: 'CPA' | 'DPP' | 'PL' | 'PPNN'; reportingPct: number }) => {
     if (mapHeatMode === 'density') {
       const idx = Math.min(
         DENSITY_RAMP.length - 1,
@@ -969,7 +969,7 @@ export const NigeriaHeatMap: React.FC<NigeriaHeatMapProps> = ({
                     textAnchor="middle"
                     letterSpacing="2"
                   >
-                    NIGER REPUBLIC
+                    NIGERIA REPUBLIC
                   </text>
                   <text
                     x={16}
