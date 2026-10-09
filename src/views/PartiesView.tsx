@@ -1,13 +1,6 @@
 import React, { useState } from 'react';
 import { electionService } from '../services/electionService';
-
-const PARTY_COLORS: Record<string, string> = {
-  APC: '#0D6338',
-  PDP: '#DC2626',
-  LP: '#16A34A',
-  NNPP: '#2563EB',
-  APGA: '#CA8A04',
-};
+import { PARTY_COLORS } from '../constants';
 
 export const PartiesView: React.FC = () => {
   const parties = electionService.getParties();

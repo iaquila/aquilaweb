@@ -19,21 +19,8 @@ import {
   Map,
 } from 'lucide-react';
 import { NigeriaHeatMap } from '../components/NigeriaHeatMap';
-
-const PARTY_COLORS: Record<string, string> = {
-  CPA: '#0D6338',
-  DPP: '#DC2626',
-  PL: '#16A34A',
-  PPNN: '#2563EB',
-  PAGA: '#D97706',
-};
-
-const BASE_VOTES_MAP: Record<string, number> = {
-  cand1: 6420,
-  cand3: 5890,
-  cand2: 3980,
-  cand4: 1210,
-};
+import { Card } from '../components/Card';
+import { PARTY_COLORS, BASE_VOTES_MAP } from '../constants';
 
 export const DashboardView: React.FC = () => {
   const {
@@ -730,104 +717,104 @@ export const DashboardView: React.FC = () => {
       {/* Two-Column Responsive Section: Assigned Polling Units & Operations / Quick Controls */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
         {/* 5. Assigned Polling Units (app/(app)/(tabs)/index.tsx lines 718-849) */}
-      <div className="rounded-2xl border border-[#1C2E24] bg-[#0E1712] p-5 shadow-lg space-y-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-base font-bold text-white">
-              {user?.role === 'POLLING_AGENT'
-                ? 'My Assigned Polling Unit'
-                : isSupervisory
-                ? 'Jurisdictional Collation Sample Units'
-                : 'My Assigned Polling Units'}
-            </h2>
-            <p className="text-xs text-[#718579]">
-              {user?.role === 'POLLING_AGENT'
-                ? 'Polling Unit Agent assignment · 1 Polling Unit'
-                : isSupervisory
-                ? `${roleLabel ?? 'Supervisory'} overview · 3 Reporting Units`
-                : 'Field Agent jurisdiction · 3 Polling Units'}
-            </p>
+        <Card className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-base font-bold text-white">
+                {user?.role === 'POLLING_AGENT'
+                  ? 'My Assigned Polling Unit'
+                  : isSupervisory
+                  ? 'Jurisdictional Collation Sample Units'
+                  : 'My Assigned Polling Units'}
+              </h2>
+              <p className="text-xs text-[#718579]">
+                {user?.role === 'POLLING_AGENT'
+                  ? 'Polling Unit Agent assignment · 1 Polling Unit'
+                  : isSupervisory
+                  ? `${roleLabel ?? 'Supervisory'} overview · 3 Reporting Units`
+                  : 'Field Agent jurisdiction · 3 Polling Units'}
+              </p>
+            </div>
+            <button
+              onClick={() => setActiveTab('locations')}
+              className="text-xs font-bold text-[#10B981] hover:underline"
+            >
+              View All
+            </button>
           </div>
-          <button
-            onClick={() => setActiveTab('locations')}
-            className="text-xs font-bold text-[#10B981] hover:underline"
-          >
-            View All
-          </button>
-        </div>
 
-        <div className="space-y-3">
-          {activePus.map((pu) => {
-            const isPub = pu.status === 'PUBLISHED';
-            const isDraft = pu.status === 'DRAFT';
+          <div className="space-y-3">
+            {activePus.map((pu) => {
+              const isPub = pu.status === 'PUBLISHED';
+              const isDraft = pu.status === 'DRAFT';
 
-            return (
-              <div
-                key={pu.id}
-                className="rounded-xl border border-[#1C2E24] bg-[#070C09] p-4 space-y-3 hover:border-[#10B981]/50 transition"
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <h3 className="text-sm font-bold text-white">{pu.name}</h3>
-                    <p className="text-xs text-[#718579]">
-                      {pu.code} · {pu.lga}, {pu.state}
-                    </p>
+              return (
+                <div
+                  key={pu.id}
+                  className="rounded-xl border border-[#1C2E24] bg-[#070C09] p-4 space-y-3 hover:border-[#10B981]/50 transition"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <h3 className="text-sm font-bold text-white">{pu.name}</h3>
+                      <p className="text-xs text-[#718579]">
+                        {pu.code} · {pu.lga}, {pu.state}
+                      </p>
+                    </div>
+
+                    <div
+                      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold ${
+                        isPub
+                          ? 'bg-emerald-500/15 text-emerald-400'
+                          : isDraft
+                          ? 'bg-amber-500/15 text-amber-400'
+                          : 'bg-zinc-800 text-zinc-400'
+                      }`}
+                    >
+                      {isPub ? (
+                        <CheckCircle2 className="w-3.5 h-3.5" />
+                      ) : isDraft ? (
+                        <Clock className="w-3.5 h-3.5" />
+                      ) : (
+                        <Circle className="w-3.5 h-3.5" />
+                      )}
+                      <span>{pu.status}</span>
+                    </div>
                   </div>
 
-                  <div
-                    className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold ${
-                      isPub
-                        ? 'bg-emerald-500/15 text-emerald-400'
+                  <div className="flex items-center justify-between pt-2 border-t border-[#1C2E24] text-xs">
+                    <span className="text-[#718579]">
+                      {isPub
+                        ? `${pu.votes} Votes tallied (${pu.accredited} accredited)`
                         : isDraft
-                        ? 'bg-amber-500/15 text-amber-400'
-                        : 'bg-zinc-800 text-zinc-400'
-                    }`}
-                  >
-                    {isPub ? (
-                      <CheckCircle2 className="w-3.5 h-3.5" />
-                    ) : isDraft ? (
-                      <Clock className="w-3.5 h-3.5" />
-                    ) : (
-                      <Circle className="w-3.5 h-3.5" />
-                    )}
-                    <span>{pu.status}</span>
+                        ? 'Draft saved in local store'
+                        : 'Awaiting accredited ballot entry'}
+                    </span>
+
+                    <button
+                      onClick={() => {
+                        if (isSupervisory || isPub) {
+                          setActiveTab('results');
+                        } else if (isDraft) {
+                          setDraftsQueueOpen(true);
+                        } else {
+                          setSubmitResultOpen(true);
+                        }
+                      }}
+                      className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold transition ${
+                        isPub || isSupervisory
+                          ? 'bg-[#1C2E24] text-white hover:bg-[#253D30]'
+                          : 'bg-[#10B981] text-black hover:bg-emerald-400'
+                      }`}
+                    >
+                      <span>{isSupervisory ? 'Audit' : isPub ? 'View' : isDraft ? 'Resume' : 'Submit'}</span>
+                      <ChevronRight className="w-3.5 h-3.5" />
+                    </button>
                   </div>
                 </div>
-
-                <div className="flex items-center justify-between pt-2 border-t border-[#1C2E24] text-xs">
-                  <span className="text-[#718579]">
-                    {isPub
-                      ? `${pu.votes} Votes tallied (${pu.accredited} accredited)`
-                      : isDraft
-                      ? 'Draft saved in local store'
-                      : 'Awaiting accredited ballot entry'}
-                  </span>
-
-                  <button
-                    onClick={() => {
-                      if (isSupervisory || isPub) {
-                        setActiveTab('results');
-                      } else if (isDraft) {
-                        setDraftsQueueOpen(true);
-                      } else {
-                        setSubmitResultOpen(true);
-                      }
-                    }}
-                    className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold transition ${
-                      isPub || isSupervisory
-                        ? 'bg-[#1C2E24] text-white hover:bg-[#253D30]'
-                        : 'bg-[#10B981] text-black hover:bg-emerald-400'
-                    }`}
-                  >
-                    <span>{isSupervisory ? 'Audit' : isPub ? 'View' : isDraft ? 'Resume' : 'Submit'}</span>
-                    <ChevronRight className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
+              );
+            })}
+          </div>
+        </Card>
 
         {/* Right Column: Quick Actions + Field Incident Stream */}
         <div className="space-y-6">
@@ -908,7 +895,7 @@ export const DashboardView: React.FC = () => {
 
       {/* 7. Field Incident Stream (app/(app)/(tabs)/index.tsx lines 956-986) */}
       {incidents.length > 0 && (
-        <div className="rounded-2xl border border-[#1C2E24] bg-[#0E1712] p-5 shadow-lg space-y-4">
+        <Card className="space-y-4">
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-base font-bold text-white">Field Incident Stream</h2>
@@ -958,7 +945,7 @@ export const DashboardView: React.FC = () => {
               </div>
             ))}
           </div>
-        </div>
+        </Card>
       )}
         </div>
       </div>

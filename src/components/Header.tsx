@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useAppStore, PREDEFINED_ACCOUNTS } from '../store';
+import { useDebouncedCallback } from '../hooks/useDebounce';
 import {
   FileText,
   AlertTriangle,
@@ -18,6 +19,11 @@ export const Header: React.FC = () => {
   } = useAppStore();
 
   const [roleMenuOpen, setRoleMenuOpen] = useState(false);
+
+  const handleOpenSubmit = useDebouncedCallback(() => setSubmitResultOpen(true), 300);
+  const handleOpenIncident = useDebouncedCallback(() => setReportIncidentOpen(true), 300);
+  const handleOpenDrafts = useDebouncedCallback(() => setDraftsQueueOpen(true), 300);
+  const handleLogoClick = useDebouncedCallback(() => setActiveTab('dashboard'), 300);
 
   const draftsCount = results.filter((r) => r.status === 'DRAFT').length;
 
@@ -48,7 +54,7 @@ export const Header: React.FC = () => {
         {/* Logo and Brand */}
         <div className="flex items-center gap-2 sm:gap-3">
           <div
-            onClick={() => setActiveTab('dashboard')}
+            onClick={handleLogoClick}
             className="flex items-center gap-2 sm:gap-2.5 cursor-pointer group"
           >
             <div className="relative w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-gradient-to-br from-[#0D6338] to-[#10B981] p-1 shadow-lg shadow-emerald-950/50 flex items-center justify-center overflow-hidden shrink-0">
@@ -102,7 +108,7 @@ export const Header: React.FC = () => {
               {/* Drafts Alert Badge */}
               {draftsCount > 0 && (
                 <button
-                  onClick={() => setDraftsQueueOpen(true)}
+                  onClick={handleOpenDrafts}
                   title="Drafts Queue"
                   aria-label="Drafts Queue"
                   className="flex items-center gap-1 px-1.5 sm:px-2.5 py-1.5 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 text-xs font-semibold transition shrink-0"
@@ -117,7 +123,7 @@ export const Header: React.FC = () => {
 
               {/* Submit Result CTA */}
               <button
-                onClick={() => setSubmitResultOpen(true)}
+                onClick={handleOpenSubmit}
                 title="Submit Result"
                 aria-label="Submit Result"
                 className="flex items-center gap-1.5 p-1.5 sm:px-3 sm:py-1.5 rounded-lg bg-[#0D6338] hover:bg-[#15803D] text-white text-xs font-semibold transition shadow-sm shrink-0"
@@ -128,7 +134,7 @@ export const Header: React.FC = () => {
 
               {/* Report Incident CTA */}
               <button
-                onClick={() => setReportIncidentOpen(true)}
+                onClick={handleOpenIncident}
                 title="Report Incident"
                 aria-label="Report Incident"
                 className="flex items-center gap-1.5 p-1.5 sm:px-3 sm:py-1.5 rounded-lg bg-red-950/80 hover:bg-red-900/80 text-red-200 border border-red-800/50 text-xs font-semibold transition shrink-0"

@@ -8,6 +8,7 @@ import {
   Flame,
 } from 'lucide-react';
 import { useAppStore } from '../store';
+import { PARTY_COLORS } from '../constants';
 
 export type GeoLevel = 'state' | 'lga';
 export type MapHeatMode = 'party' | 'density';
@@ -270,12 +271,6 @@ export type StateCollation = {
   shares: Array<{ party: 'CPA' | 'DPP' | 'PL' | 'PPNN'; votes: number; pct: number }>;
 };
 
-const PARTY_COLORS: Record<'CPA' | 'DPP' | 'PL' | 'PPNN', string> = {
-  CPA: '#10B981',
-  DPP: '#EF4444',
-  PL: '#F59E0B',
-  PPNN: '#3B82F6',
-};
 
 const DENSITY_RAMP = [
   '#092618',

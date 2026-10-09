@@ -1,5 +1,6 @@
 import React from 'react';
 import { useAppStore } from '../store';
+import { useDebouncedCallback } from '../hooks/useDebounce';
 import {
   LayoutDashboard,
   Vote,
@@ -70,6 +71,10 @@ export const Navigation: React.FC = () => {
     },
   ];
 
+  const handleTabClick = useDebouncedCallback((tabId: typeof activeTab) => {
+    setActiveTab(tabId);
+  }, 250);
+
   return (
     <nav className="bg-[#0E1712] border-b border-[#1C2E24] px-4 lg:px-8">
       <div className="max-w-7xl mx-auto flex items-center overflow-x-auto no-scrollbar gap-1 py-1.5">
@@ -79,7 +84,7 @@ export const Navigation: React.FC = () => {
           return (
             <button
               key={item.id}
-              onClick={() => setActiveTab(item.id)}
+              onClick={() => handleTabClick(item.id)}
               className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${
                 isActive
                   ? 'bg-gradient-to-r from-[#0D6338] to-[#10B981] text-white shadow-md shadow-emerald-950/40'

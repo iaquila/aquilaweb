@@ -61,10 +61,23 @@
     - Moved Candidate Snapshot Performance horizontally into the header row across 4 candidate cards with candidate selection wiring for AI projection.
     - Repositioned the Compact Tactical Heat Map and AI Election Projection Engine side-by-side in a 2-column grid (`grid grid-cols-1 lg:grid-cols-2`), cutting the Heat Map width to 50% on desktop as specified in the architectural sketch.
     - Aligned candidate name and party representation across both Snapshot Performance and AI Projection to `{fullName} ({partyAcronym})`.
+  * Constants & SSOT Centralization:
+    - Extracted all political party color mappings and election constants into `src/constants/parties.ts`, `src/constants/timing.ts`, and `src/constants/index.ts`.
+    - Eliminated duplicate `PARTY_COLORS` definitions across `DashboardView.tsx`, `PartiesView.tsx`, and `NigeriaHeatMap.tsx`.
+  * Skeleton Shimmer & Loading Architecture:
+    - Configured `@keyframes shimmer` and `.animate-shimmer` utility in `src/index.css`.
+    - Implemented high-fidelity `Skeleton`, `CardSkeleton`, `MetricsSkeleton`, and `TableSkeleton` suite with light-sweep gradient animation in `src/components/Skeleton.tsx`.
+  * Interaction & Navigation Debouncing:
+    - Created `useDebouncedCallback` and `DebouncedButton` with standard 300ms leading-edge cooldown.
+    - Debounced tab navigation in `Navigation.tsx` and modal triggers (Submit Result, Report Incident, Drafts Queue, Brand Home) in `Header.tsx`.
+  * Container Primitive Standardization:
+    - Created reusable `<Card>` primitive (`default`, `highlighted`, `elevated`, `subtle`) matching the design system and refactored container sections.
+  * Multi-Viewport DOM & Interaction Audit:
+    - Verified responsive layout and 0 horizontal overflow across Mobile (360px, 375px), Tablet (768px), and Desktop (1280px, 1440px).
+    - Verified candidate selection linking between top header cards and the AI projection engine.
 
 ## Verification Status
 Staff Invariant Audit: INVARIANTS VERIFIED
 - `tsc --noEmit`: Exited with code 0.
-- `vite build`: Clean production bundle built successfully (dist includes `.htaccess` with 301 legal redirects, and brand eagle head assets).
-- Curl verification: All legal endpoints on `https://iaquila.com.ng` verified HTTP 200.
-- Chrome DevTools Mobile Viewport Audit: Verified 0 horizontal overflow across 320px, 360px, 375px, 390px, and 412px viewports.
+- `vite build`: Clean production bundle built successfully.
+- Multi-viewport DOM verification: 0 horizontal overflow (`scrollWidth === clientWidth`) across 360px, 375px, 768px, and 1440px displays.
