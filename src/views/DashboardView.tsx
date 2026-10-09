@@ -179,6 +179,95 @@ export const DashboardView: React.FC = () => {
   // Search autocomplete
   const searchResults = locationSearchQuery ? electionService.searchLocations(locationSearchQuery) : [];
 
+  // Quick Actions Grid (Search Results / Enter Results, Incident Control, Collation Room, Locations)
+  const renderQuickActions = () => (
+    <div className="grid grid-cols-2 gap-2.5">
+      {isSupervisory ? (
+        <>
+          <button
+            onClick={() => setActiveTab('results')}
+            className="rounded-xl border border-[#1C2E24] bg-[#0E1712] p-2.5 sm:p-3 text-left hover:border-[#10B981]/50 transition group flex items-center gap-2.5 sm:gap-3"
+          >
+            <div className="w-8 h-8 rounded-lg bg-[#10B981]/15 text-[#10B981] flex items-center justify-center flex-shrink-0">
+              <Search className="w-4 h-4" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-xs font-bold text-white group-hover:text-[#10B981] transition truncate">Search Results</p>
+              <p className="text-[10px] text-[#718579] truncate">Audit returns</p>
+            </div>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('incidents')}
+            className="rounded-xl border border-[#1C2E24] bg-[#0E1712] p-2.5 sm:p-3 text-left hover:border-red-500/50 transition group flex items-center gap-2.5 sm:gap-3"
+          >
+            <div className="w-8 h-8 rounded-lg bg-red-500/15 text-red-400 flex items-center justify-center flex-shrink-0">
+              <AlertTriangle className="w-4 h-4" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-xs font-bold text-white group-hover:text-red-400 transition truncate">Incident Control</p>
+              <p className="text-[10px] text-[#718579] truncate">Monitor &amp; triage</p>
+            </div>
+          </button>
+        </>
+      ) : (
+        <>
+          <button
+            onClick={() => setSubmitResultOpen(true)}
+            className="rounded-xl border border-[#1C2E24] bg-[#0E1712] p-2.5 sm:p-3 text-left hover:border-[#10B981]/50 transition group flex items-center gap-2.5 sm:gap-3"
+          >
+            <div className="w-8 h-8 rounded-lg bg-[#10B981]/15 text-[#10B981] flex items-center justify-center flex-shrink-0">
+              <PlusCircle className="w-4 h-4" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-xs font-bold text-white group-hover:text-[#10B981] transition truncate">Enter Results</p>
+              <p className="text-[10px] text-[#718579] truncate">PU ballot return</p>
+            </div>
+          </button>
+
+          <button
+            onClick={() => setReportIncidentOpen(true)}
+            className="rounded-xl border border-[#1C2E24] bg-[#0E1712] p-2.5 sm:p-3 text-left hover:border-red-500/50 transition group flex items-center gap-2.5 sm:gap-3"
+          >
+            <div className="w-8 h-8 rounded-lg bg-red-500/15 text-red-400 flex items-center justify-center flex-shrink-0">
+              <AlertTriangle className="w-4 h-4" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-xs font-bold text-white group-hover:text-red-400 transition truncate">Report Incident</p>
+              <p className="text-[10px] text-[#718579] truncate">Live covert filing</p>
+            </div>
+          </button>
+        </>
+      )}
+
+      <button
+        onClick={() => setActiveTab('results')}
+        className="rounded-xl border border-[#1C2E24] bg-[#0E1712] p-2.5 sm:p-3 text-left hover:border-amber-500/50 transition group flex items-center gap-2.5 sm:gap-3"
+      >
+        <div className="w-8 h-8 rounded-lg bg-amber-500/15 text-amber-400 flex items-center justify-center flex-shrink-0">
+          <BarChart3 className="w-4 h-4" />
+        </div>
+        <div className="min-w-0">
+          <p className="text-xs font-bold text-white group-hover:text-amber-400 transition truncate">Collation Room</p>
+          <p className="text-[10px] text-[#718579] truncate">Wards &amp; LGA summary</p>
+        </div>
+      </button>
+
+      <button
+        onClick={() => setActiveTab('locations')}
+        className="rounded-xl border border-[#1C2E24] bg-[#0E1712] p-2.5 sm:p-3 text-left hover:border-[#10B981]/50 transition group flex items-center gap-2.5 sm:gap-3"
+      >
+        <div className="w-8 h-8 rounded-lg bg-[#10B981]/15 text-[#10B981] flex items-center justify-center flex-shrink-0">
+          <Map className="w-4 h-4" />
+        </div>
+        <div className="min-w-0">
+          <p className="text-xs font-bold text-white group-hover:text-[#10B981] transition truncate">Locations</p>
+          <p className="text-[10px] text-[#718579] truncate">National registry</p>
+        </div>
+      </button>
+    </div>
+  );
+
   return (
     <div className="space-y-4 pb-16">
       {/* 1. Station Console Header + Horizontal Candidate Snapshot for Election Officer */}
@@ -464,8 +553,10 @@ export const DashboardView: React.FC = () => {
             <NigeriaHeatMap compact />
           </div>
 
-          {/* AI Election Projection Engine */}
-          <div className="rounded-2xl border-2 border-[#10B981] bg-[#0E1712] p-5 shadow-xl flex flex-col gap-4">
+          {/* Right Column: AI Projection Engine + Tactical Command Actions */}
+          <div className="space-y-4 flex flex-col">
+            {/* AI Election Projection Engine */}
+            <div className="rounded-2xl border-2 border-[#10B981] bg-[#0E1712] p-5 shadow-xl flex flex-col gap-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div className="flex items-center gap-3">
                 <div className="w-9 h-9 rounded-xl bg-[#10B981] text-black flex items-center justify-center">
@@ -679,55 +770,44 @@ export const DashboardView: React.FC = () => {
               </span>
 
               {projection ? (
-                <>
-                  {/* Win Probability + Confidence row */}
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="bg-[#0E1712] rounded-xl p-3 space-y-1.5">
-                      <span className="text-[9px] font-bold uppercase tracking-wider text-[#718579] block">
-                        WIN PROBABILITY
-                      </span>
-                      <div className="flex items-baseline gap-1">
-                        <span className="text-xl font-black text-[#10B981]">
-                          {projection.winProbability}%
-                        </span>
-                      </div>
-                      <div className="w-full h-1.5 rounded-full bg-[#121F18] overflow-hidden">
-                        <div
-                          className="h-full rounded-full bg-gradient-to-r from-emerald-700 to-emerald-400 transition-all duration-700"
-                          style={{ width: `${projection.winProbability}%` }}
-                        />
-                      </div>
-                    </div>
-                    <div className="bg-[#0E1712] rounded-xl p-3 space-y-1.5">
-                      <span className="text-[9px] font-bold uppercase tracking-wider text-[#718579] block">
-                        MODEL CONFIDENCE
-                      </span>
-                      <div className="flex items-baseline gap-1">
-                        <span className="text-xl font-black text-blue-400">
-                          {projection.confidenceScore}%
-                        </span>
-                      </div>
-                      <div className="w-full h-1.5 rounded-full bg-[#121F18] overflow-hidden">
-                        <div
-                          className="h-full rounded-full bg-gradient-to-r from-blue-700 to-blue-400 transition-all duration-700"
-                          style={{ width: `${projection.confidenceScore}%` }}
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-
-                  {/* Secondary Model Insight */}
-                  <div className="p-3 rounded-lg bg-[#10B981]/[0.06] border border-[#10B981]/15 text-[11px] text-[#94A89D] leading-relaxed flex-1">
-                    <span className="text-[9px] font-bold uppercase tracking-wider text-[#718579] block mb-1.5">
-                      MODEL INTEGRITY NOTE
+                /* Win Probability + Confidence row */
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="bg-[#0E1712] rounded-xl p-3 space-y-1.5">
+                    <span className="text-[9px] font-bold uppercase tracking-wider text-[#718579] block">
+                      WIN PROBABILITY
                     </span>
-                    {projection.keyInsights[1]}
+                    <div className="flex items-baseline gap-1">
+                      <span className="text-xl font-black text-[#10B981]">
+                        {projection.winProbability}%
+                      </span>
+                    </div>
+                    <div className="w-full h-1.5 rounded-full bg-[#121F18] overflow-hidden">
+                      <div
+                        className="h-full rounded-full bg-gradient-to-r from-emerald-700 to-emerald-400 transition-all duration-700"
+                        style={{ width: `${projection.winProbability}%` }}
+                      />
+                    </div>
                   </div>
-                </>
+                  <div className="bg-[#0E1712] rounded-xl p-3 space-y-1.5">
+                    <span className="text-[9px] font-bold uppercase tracking-wider text-[#718579] block">
+                      MODEL CONFIDENCE
+                    </span>
+                    <div className="flex items-baseline gap-1">
+                      <span className="text-xl font-black text-blue-400">
+                        {projection.confidenceScore}%
+                      </span>
+                    </div>
+                    <div className="w-full h-1.5 rounded-full bg-[#121F18] overflow-hidden">
+                      <div
+                        className="h-full rounded-full bg-gradient-to-r from-blue-700 to-blue-400 transition-all duration-700"
+                        style={{ width: `${projection.confidenceScore}%` }}
+                      />
+                    </div>
+                  </div>
+                </div>
               ) : (
                 /* Idle state — no projection run yet */
-                <div className="flex-1 flex flex-col items-center justify-center gap-3 py-4 text-center">
+                <div className="flex flex-col items-center justify-center gap-3 py-4 text-center">
                   <div className="w-10 h-10 rounded-2xl bg-[#10B981]/10 border border-[#10B981]/20 flex items-center justify-center">
                     <Sparkles className="w-5 h-5 text-[#10B981]/50" />
                   </div>
@@ -741,8 +821,12 @@ export const DashboardView: React.FC = () => {
               )}
             </div>
           </div>
+
+          {/* Tactical Command Quick Actions */}
+          {renderQuickActions()}
         </div>
-      )}
+      </div>
+    )}
 
       {/* 3. Candidate Snapshot Performance (For Field Agents & Polling Agents - Compact Horizontal Card Grid) */}
       {!isOfficerOrAbove && (
@@ -977,92 +1061,8 @@ export const DashboardView: React.FC = () => {
 
         {/* Right Column: Quick Actions + Field Incident Stream */}
         <div className="space-y-6">
-          {/* 6. Quick Actions Grid (Compact Ergonomic Controls) */}
-          <div className="grid grid-cols-2 gap-2.5">
-            {isSupervisory ? (
-              <>
-                <button
-                  onClick={() => setActiveTab('results')}
-                  className="rounded-xl border border-[#1C2E24] bg-[#0E1712] p-2.5 sm:p-3 text-left hover:border-[#10B981]/50 transition group flex items-center gap-2.5 sm:gap-3"
-                >
-                  <div className="w-8 h-8 rounded-lg bg-[#10B981]/15 text-[#10B981] flex items-center justify-center flex-shrink-0">
-                    <Search className="w-4 h-4" />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-xs font-bold text-white group-hover:text-[#10B981] transition truncate">Search Results</p>
-                    <p className="text-[10px] text-[#718579] truncate">Audit returns</p>
-                  </div>
-                </button>
-
-                <button
-                  onClick={() => setActiveTab('incidents')}
-                  className="rounded-xl border border-[#1C2E24] bg-[#0E1712] p-2.5 sm:p-3 text-left hover:border-red-500/50 transition group flex items-center gap-2.5 sm:gap-3"
-                >
-                  <div className="w-8 h-8 rounded-lg bg-red-500/15 text-red-400 flex items-center justify-center flex-shrink-0">
-                    <AlertTriangle className="w-4 h-4" />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-xs font-bold text-white group-hover:text-red-400 transition truncate">Incident Control</p>
-                    <p className="text-[10px] text-[#718579] truncate">Monitor &amp; triage</p>
-                  </div>
-                </button>
-              </>
-            ) : (
-              <>
-                <button
-                  onClick={() => setSubmitResultOpen(true)}
-                  className="rounded-xl border border-[#1C2E24] bg-[#0E1712] p-2.5 sm:p-3 text-left hover:border-[#10B981]/50 transition group flex items-center gap-2.5 sm:gap-3"
-                >
-                  <div className="w-8 h-8 rounded-lg bg-[#10B981]/15 text-[#10B981] flex items-center justify-center flex-shrink-0">
-                    <PlusCircle className="w-4 h-4" />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-xs font-bold text-white group-hover:text-[#10B981] transition truncate">Enter Results</p>
-                    <p className="text-[10px] text-[#718579] truncate">PU ballot return</p>
-                  </div>
-                </button>
-
-                <button
-                  onClick={() => setReportIncidentOpen(true)}
-                  className="rounded-xl border border-[#1C2E24] bg-[#0E1712] p-2.5 sm:p-3 text-left hover:border-red-500/50 transition group flex items-center gap-2.5 sm:gap-3"
-                >
-                  <div className="w-8 h-8 rounded-lg bg-red-500/15 text-red-400 flex items-center justify-center flex-shrink-0">
-                    <AlertTriangle className="w-4 h-4" />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-xs font-bold text-white group-hover:text-red-400 transition truncate">Report Incident</p>
-                    <p className="text-[10px] text-[#718579] truncate">Live covert filing</p>
-                  </div>
-                </button>
-              </>
-            )}
-
-            <button
-              onClick={() => setActiveTab('results')}
-              className="rounded-xl border border-[#1C2E24] bg-[#0E1712] p-2.5 sm:p-3 text-left hover:border-amber-500/50 transition group flex items-center gap-2.5 sm:gap-3"
-            >
-              <div className="w-8 h-8 rounded-lg bg-amber-500/15 text-amber-400 flex items-center justify-center flex-shrink-0">
-                <BarChart3 className="w-4 h-4" />
-              </div>
-              <div className="min-w-0">
-                <p className="text-xs font-bold text-white group-hover:text-amber-400 transition truncate">Collation Room</p>
-                <p className="text-[10px] text-[#718579] truncate">Wards &amp; LGA summary</p>
-              </div>
-            </button>
-
-            <button
-              onClick={() => setActiveTab('locations')}
-              className="rounded-xl border border-[#1C2E24] bg-[#0E1712] p-2.5 sm:p-3 text-left hover:border-[#10B981]/50 transition group flex items-center gap-2.5 sm:gap-3"
-            >
-              <div className="w-8 h-8 rounded-lg bg-[#10B981]/15 text-[#10B981] flex items-center justify-center flex-shrink-0">
-                <Map className="w-4 h-4" />
-              </div>
-              <div className="min-w-0">
-                <p className="text-xs font-bold text-white group-hover:text-[#10B981] transition truncate">Locations</p>
-                <p className="text-[10px] text-[#718579] truncate">National registry</p>
-              </div>
-            </button>
-          </div>
+          {/* 6. Quick Actions Grid (For Field / Polling Agents where mid-section is hidden) */}
+          {!isOfficerOrAbove && renderQuickActions()}
 
       {/* 7. Field Incident Stream (app/(app)/(tabs)/index.tsx lines 956-986) */}
       {incidents.length > 0 && (
