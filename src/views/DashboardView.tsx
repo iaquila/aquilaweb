@@ -92,8 +92,6 @@ export const DashboardView: React.FC = () => {
   // Candidate agent is tied to
   const myCandidateId = user?.watchCandidateId ?? 'cand3';
   const myCandidate = candidateScores.find((c) => c.id === myCandidateId) ?? candidateScores[0];
-  const myCandidateRank = candidateScores.findIndex((c) => c.id === myCandidate?.id) + 1;
-  const otherCandidates = candidateScores.filter((c) => c.id !== myCandidate?.id).slice(0, 3);
   const winningCandidate = candidateScores[0];
 
   const draftSubmissions = results.filter((r) => r.status === 'DRAFT');
@@ -592,117 +590,77 @@ export const DashboardView: React.FC = () => {
         </div>
       )}
 
-      {/* 3. Candidate Snapshot Performance (For Field Agents & Polling Agents - Full Width Vertical Card) */}
+      {/* 3. Candidate Snapshot Performance (For Field Agents & Polling Agents - Compact Horizontal Card Grid) */}
       {!isOfficerOrAbove && (
-        <div className="rounded-2xl border border-[#1C2E24] bg-[#0E1712] p-5 shadow-lg space-y-4">
+        <Card className="space-y-3">
           <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-base font-bold text-white">Snapshot Performance</h2>
-              <p className="text-xs text-[#718579]">
-                Live top candidates ranked by verified vote tally
-              </p>
+            <div className="flex items-center gap-2">
+              <h2 className="text-sm sm:text-base font-bold text-white">Snapshot Performance</h2>
+              <span className="text-[11px] text-[#718579] hidden sm:inline">
+                · Live top candidates ranked by verified vote tally
+              </span>
             </div>
             {winningCandidate && (
-              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#10B981]/15 text-[#10B981] text-xs font-bold">
-                <Trophy className="w-3.5 h-3.5" />
-                <span>Leading</span>
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#10B981]/15 text-[#10B981] text-xs font-bold">
+                <Trophy className="w-3 h-3" />
+                <span>{winningCandidate.fullName} Leading</span>
               </div>
             )}
           </div>
 
-          {/* Pinned My Candidate Row */}
-          {myCandidate && (
-            <div className="rounded-xl border-2 border-[#10B981] bg-[#121F18]/40 p-3.5 space-y-2.5">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2.5">
-                  <span className="w-7 h-7 rounded-lg bg-[#10B981] text-black font-black text-xs flex items-center justify-center">
-                    #{myCandidateRank}
-                  </span>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-bold text-white">
-                        {myCandidate.fullName} ({myCandidate.partyAcronym})
-                      </span>
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#10B981]/20 text-[#10B981] border border-[#10B981]/40">
-                        MY CANDIDATE
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="text-right">
-                  <span className="text-sm font-bold text-white font-mono block">
-                    {myCandidate.votes.toLocaleString()}
-                  </span>
-                  <span className="text-xs font-bold text-[#10B981] font-mono">
-                    {myCandidate.pct.toFixed(1)}%
-                  </span>
-                </div>
-              </div>
-
-              <div className="w-full bg-[#1C2E24] rounded-full h-1.5 overflow-hidden">
-                <div
-                  className="h-1.5 rounded-full transition-all duration-500"
-                  style={{
-                    width: `${Math.min(myCandidate.pct, 100)}%`,
-                    backgroundColor: PARTY_COLORS[myCandidate.partyAcronym] || '#10B981',
-                  }}
-                />
-              </div>
-            </div>
-          )}
-
-          {/* Other Contesting Candidates */}
-          <div className="space-y-2">
-            {otherCandidates.map((cand) => {
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-2.5">
+            {candidateScores.map((cand) => {
               const rank = candidateScores.findIndex((c) => c.id === cand.id) + 1;
               const isWinner = rank === 1;
+              const isMyCandidate = cand.id === myCandidate?.id;
               const partyCol = PARTY_COLORS[cand.partyAcronym] || '#10B981';
 
               return (
                 <div
                   key={cand.id}
-                  className={`rounded-xl border p-3.5 space-y-2.5 transition ${
-                    isWinner ? 'border-[#10B981] bg-[#121F18]/20' : 'border-[#1C2E24] bg-[#070C09]'
+                  className={`rounded-lg border p-2.5 transition flex flex-col justify-between ${
+                    isMyCandidate
+                      ? 'border-[#10B981] bg-[#121F18]/60 ring-1 ring-[#10B981]'
+                      : isWinner
+                      ? 'border-[#10B981]/40 bg-[#121F18]/20'
+                      : 'border-[#1C2E24] bg-[#070C09]'
                   }`}
                 >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2.5">
+                  <div className="flex items-center justify-between gap-1 mb-1.5">
+                    <div className="flex items-center gap-1.5 min-w-0">
                       <span
-                        className={`w-7 h-7 rounded-lg font-bold text-xs flex items-center justify-center ${
+                        className={`w-4 h-4 sm:w-5 sm:h-5 rounded text-[9px] sm:text-[10px] font-black flex items-center justify-center flex-shrink-0 ${
                           isWinner ? 'bg-[#10B981] text-black' : 'bg-[#1C2E24] text-[#94A89D]'
                         }`}
                       >
                         #{rank}
                       </span>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm font-bold text-white">
-                            {cand.fullName} ({cand.partyAcronym})
-                          </span>
-                          {isWinner && (
-                            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-[#10B981]/20 text-[#10B981] flex items-center gap-1">
-                              <Trophy className="w-2.5 h-2.5" />
-                              LEADING
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="text-right">
-                      <span className="text-sm font-bold text-white font-mono block">
-                        {cand.votes.toLocaleString()}
-                      </span>
-                      <span className="text-xs font-bold text-[#10B981] font-mono">
-                        {cand.pct.toFixed(1)}%
+                      <span
+                        className="text-xs font-bold text-white truncate"
+                        title={`${cand.fullName} (${cand.partyAcronym})`}
+                      >
+                        {cand.fullName} ({cand.partyAcronym})
                       </span>
                     </div>
+                    {isMyCandidate && (
+                      <span className="text-[8px] font-black px-1.5 py-0.5 rounded bg-[#10B981]/20 text-[#10B981] border border-[#10B981]/40 flex-shrink-0">
+                        MY
+                      </span>
+                    )}
                   </div>
 
-                  <div className="w-full bg-[#1C2E24] rounded-full h-1.5 overflow-hidden">
+                  <div className="flex items-baseline justify-between gap-1 text-xs">
+                    <span className="font-mono font-bold text-white text-[11px] sm:text-xs">
+                      {cand.votes.toLocaleString()}
+                    </span>
+                    <span className="font-mono font-bold text-[#10B981] text-[10px] sm:text-[11px]">
+                      {cand.pct.toFixed(1)}%
+                    </span>
+                  </div>
+
+                  <div className="w-full bg-[#1C2E24] rounded-full h-1 overflow-hidden mt-1.5">
                     <div
-                      className="h-1.5 rounded-full transition-all duration-500"
+                      className="h-1 rounded-full transition-all duration-500"
                       style={{
                         width: `${Math.min(cand.pct, 100)}%`,
                         backgroundColor: partyCol,
@@ -713,7 +671,7 @@ export const DashboardView: React.FC = () => {
               );
             })}
           </div>
-        </div>
+        </Card>
       )}
 
       {/* Two-Column Responsive Section: Assigned Polling Units & Operations / Quick Controls */}
@@ -782,6 +740,36 @@ export const DashboardView: React.FC = () => {
                       <span>{pu.status}</span>
                     </div>
                   </div>
+
+                  {/* Operational Telemetry for Single Assigned PU (Polling Agent) */}
+                  {user?.role === 'POLLING_AGENT' && (
+                    <div className="grid grid-cols-3 gap-2 p-2.5 rounded-lg bg-[#0E1712] border border-[#1C2E24] text-center">
+                      <div>
+                        <span className="text-[9px] uppercase tracking-wider text-[#718579] font-bold block">
+                          Turnout
+                        </span>
+                        <span className="text-xs font-bold text-emerald-400 font-mono">
+                          {pu.accredited > 0 ? `${((pu.votes / pu.accredited) * 100).toFixed(1)}%` : '0%'}
+                        </span>
+                      </div>
+                      <div className="border-x border-[#1C2E24]">
+                        <span className="text-[9px] uppercase tracking-wider text-[#718579] font-bold block">
+                          Accredited
+                        </span>
+                        <span className="text-xs font-bold text-white font-mono">
+                          {pu.accredited}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-[9px] uppercase tracking-wider text-[#718579] font-bold block">
+                          BVAS Status
+                        </span>
+                        <span className="text-xs font-bold text-emerald-400">
+                          Verified
+                        </span>
+                      </div>
+                    </div>
+                  )}
 
                   <div className="flex items-center justify-between pt-2 border-t border-[#1C2E24] text-xs">
                     <span className="text-[#718579]">

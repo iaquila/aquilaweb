@@ -83,15 +83,19 @@
     - Navigation Intent Handoff: Added consumable PU filter pattern (`selectedPuFilter`, `setSelectedPuFilter`, `consumePuFilter`) in `src/store/index.ts`. Clicking "Audit" or "View" on assigned polling units in `DashboardView.tsx` directly opens the Form EC8A audit modal if result exists, or navigates to `ResultsView.tsx` with the filter pre-applied and atomically consumed.
     - Component Primitive SSOT: Replaced ad-hoc raw border/bg divs with centralized `<Card>` primitives across all secondary views (`ResultsView.tsx`, `IncidentsView.tsx`, `PartiesView.tsx`, `ElectionsView.tsx`, `LocationsView.tsx`).
 
+  * Field & Polling Unit Dashboard Body Compaction:
+    - Candidate Snapshot Performance: Refactored candidate cards into a compact 4-column responsive grid (`grid grid-cols-2 sm:grid-cols-4 gap-2.5`) wrapped in the `<Card>` primitive. Reduced section height from 492px to 152px (saving 340px of vertical space).
+    - Polling Unit Agent Scorecard & Column Balance: Added operational telemetry scorecard (turnout rate, BVAS status, accredited counts) for the single assigned PU, balancing left column (289px) with right column (546px) and eliminating blank voids. Field Agent columns achieve balanced height (479px vs 546px).
+    - Strict Lint & Typecheck Pass: Eliminated unused variables, passing `eslint .` with 0 errors and 0 warnings, and `tsc --noEmit` with 0 type errors.
+
 ## Verification Status
 Staff Invariant Audit: INVARIANTS VERIFIED
-- `tsc --noEmit`: Exited with code 0 (clean, 0 type errors).
-- `vite build`: Clean production bundle built successfully in 6.28s.
+- `npm run lint` (`eslint .`): Exited with code 0 (0 errors, 0 warnings).
+- `tsc --noEmit`: Exited with code 0 (0 type errors).
+- `vite build`: Clean production bundle built in 7.24s.
+- Section Heights (DevTools DOM inspection):
+  * Field/PU Candidate Snapshot: Compacted from 492px → 152px (-340px scroll overhead).
+  * Field Agent Two-Column Grid: Left col 479px vs Right col 546px (balanced).
+  * Polling Unit Agent Two-Column Grid: Left col 289px vs Right col 546px (balanced with operational scorecard).
 - Multi-viewport DOM verification: 0 horizontal overflow (`scrollWidth === clientWidth`) across 360px, 375px, 768px, and 1440px displays.
-- Modal & Interaction Verification: Verified via DevTools on port 3002:
-  * Modal open locks `bodyOverflow: "hidden"`.
-  * Real-time tally meter dynamically tracks remaining ballots (`645 / 650`).
-  * `Escape` key dismisses modal and restores `bodyOverflow: ""`.
-  * Backdrop click dismisses modal and restores `bodyOverflow: ""`.
-- Visual Ergonomics: Header height reduced to 104px single row on desktop; Quick Actions reduced to 126px; 0 dead voids across viewports.
 
