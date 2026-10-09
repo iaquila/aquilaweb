@@ -189,19 +189,19 @@ export const LoginView: React.FC = () => {
             Independent Observer Intelligence System · Real Time
           </p>
           <div className="flex items-center justify-center gap-3 text-[11px] text-[#718579]">
-            <a href="/privacy.html" target="_blank" rel="noopener noreferrer" className="hover:text-emerald-400 transition underline">
+            <a href="https://iaquila.com.ng/privacy.html" target="_blank" rel="noopener noreferrer" className="hover:text-emerald-400 transition underline">
               Privacy Policy
             </a>
             <span>•</span>
-            <a href="/terms.html" target="_blank" rel="noopener noreferrer" className="hover:text-emerald-400 transition underline">
+            <a href="https://iaquila.com.ng/terms.html" target="_blank" rel="noopener noreferrer" className="hover:text-emerald-400 transition underline">
               Terms of Service
             </a>
             <span>•</span>
-            <a href="/deletion.html" target="_blank" rel="noopener noreferrer" className="hover:text-emerald-400 transition underline">
+            <a href="https://iaquila.com.ng/deletion.html" target="_blank" rel="noopener noreferrer" className="hover:text-emerald-400 transition underline">
               Data Deletion
             </a>
             <span>•</span>
-            <a href="/support.html" target="_blank" rel="noopener noreferrer" className="hover:text-emerald-400 transition underline">
+            <a href="https://iaquila.com.ng/support.html" target="_blank" rel="noopener noreferrer" className="hover:text-emerald-400 transition underline">
               Support
             </a>
           </div>

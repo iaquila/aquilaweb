@@ -47,8 +47,12 @@
   * Station Console Header Compaction & Multi-Viewport Adaptability: Reduced station console vertical height by ~45% (desktop merges into single horizontal command strip; mobile splits into 2 ergonomic tiers with compact badges and auto-scaled metrics). Verified responsiveness across 320px–430px phones, 768px–1024px tablets, and desktop/ultrawide displays.
   * Station Console Dead Zone Elimination: Converted desktop container to `w-fit` with tight inter-metric spacing (`gap-6 lg:gap-8`) and vertical divider, eliminating horizontal dead zone across ultra-wide viewports while preserving edge-to-edge flow on mobile.
   * Root Cleanup (Web Monolith Focus): Removed legacy Expo/React Native mobile artifacts (`app/`, `core/`, `features/`, `constants/`, `types/`, `scripts/`, `app.json`, `eas.json`, `metro.config.cjs`, `babel.config.js`, `expo-env.d.ts`). Verified Vite web build and TS compilation remain 100% operational with 0 errors.
+  * Legal URLs & Subdomain Alignment: Fixed in-app legal links across `App.tsx` and `LoginView.tsx` to point directly to `https://iaquila.com.ng/{privacy,terms,deletion,support}.html` (main domain, returning HTTP 200), eliminating the invalid `app.` prefix that triggered 404s on the web app subdomain.
+  * Brand Logo Favicon Correction: Restored the authentic iAquila green eagle-head brand mark for `favicon.png` across both `public/assets/` and root `assets/`, replacing the stale 268-byte generic Expo triangle icon. Configured `apple-touch-icon` in `index.html`.
+  * Public Directory Restoration (Without Landing or Duplicate HTML): Restored `public/` directory containing `.htaccess` (with 301 redirect rules to `https://iaquila.com.ng` where cPanel's `public_html` serves the canonical documents, plus LiteSpeed SPA rewrite rules and caching) and authentic brand assets in `public/assets/`, keeping legacy `landing/` and redundant HTML copies removed.
 
 ## Verification Status
 Staff Invariant Audit: INVARIANTS VERIFIED
 - `tsc --noEmit`: Exited with code 0.
-- `vite build`: Clean production bundle built successfully.
+- `vite build`: Clean production bundle built successfully (dist includes `.htaccess` with 301 legal redirects, and brand eagle head assets).
+- Curl verification: All legal endpoints on `https://iaquila.com.ng` verified HTTP 200.

@@ -73,13 +73,13 @@ export const AppContent: React.FC = () => {
     </div>
     
     <div className="flex flex-wrap items-center justify-center gap-4 text-[11px]">
-      <a href="/privacy.html" target="_blank" rel="noopener noreferrer" className="hover:text-emerald-400 transition">Privacy Policy</a>
+      <a href="https://iaquila.com.ng/privacy.html" target="_blank" rel="noopener noreferrer" className="hover:text-emerald-400 transition">Privacy Policy</a>
       <span>•</span>
-      <a href="/terms.html" target="_blank" rel="noopener noreferrer" className="hover:text-emerald-400 transition">Terms &amp; Conditions</a>
+      <a href="https://iaquila.com.ng/terms.html" target="_blank" rel="noopener noreferrer" className="hover:text-emerald-400 transition">Terms &amp; Conditions</a>
       <span>•</span>
-      <a href="/deletion.html" target="_blank" rel="noopener noreferrer" className="hover:text-emerald-400 transition">Data Deletion</a>
+      <a href="https://iaquila.com.ng/deletion.html" target="_blank" rel="noopener noreferrer" className="hover:text-emerald-400 transition">Data Deletion</a>
       <span>•</span>
-      <a href="/support.html" target="_blank" rel="noopener noreferrer" className="hover:text-emerald-400 transition">Support</a>
+      <a href="https://iaquila.com.ng/support.html" target="_blank" rel="noopener noreferrer" className="hover:text-emerald-400 transition">Support</a>
       <span>•</span>
       <span>Federal Republic of Nigeria</span>
     </div>
