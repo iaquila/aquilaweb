@@ -2,10 +2,11 @@ import React, { useState, useMemo } from 'react';
 import {
   MapPin,
   ChevronRight,
+  ChevronDown,
   Sparkles,
-  Layers,
   Globe,
   Flame,
+  Search,
   X,
   BarChart3,
   Maximize2,
@@ -21,6 +22,10 @@ import {
   NIGERIA_RIVERS,
   NIGERIA_STATE_GEOMETRIES,
 } from '../data/nigeriaMapData';
+import {
+  getOfficialLgasForState,
+  TOTAL_OFFICIAL_LGAS_COUNT,
+} from '../data/nigeriaLgasData';
 
 export type GeoLevel = 'state' | 'lga';
 export type MapHeatMode = 'party' | 'density';
@@ -236,83 +241,126 @@ export const NigeriaHeatMap: React.FC<NigeriaHeatMapProps> = ({
     onClose: () => setInspectModalUnit(null),
   });
 
+  const [showCompactDistrictGrid, setShowCompactDistrictGrid] = useState(false);
+
   // ---------------------------------------------------------------------------
-  // Aggregate Comprehensive 37-State Baseline LGA Data
+  // Aggregate Comprehensive 37-State Baseline LGA Data (Official 774 Canonical LGAs)
   // ---------------------------------------------------------------------------
   const lgaHeatmapData: LgaCollation[] = useMemo(() => {
-    const primaryHubBases = [
-      { id: 'lga-ikeja', name: 'Ikeja LGA', state: 'Lagos', totalPus: 450, baseCollated: 412, baseVotes: { CPA: 42350, DPP: 28140, PL: 21980, PPNN: 3200 } },
-      { id: 'lga-mainland', name: 'Lagos Mainland', state: 'Lagos', totalPus: 380, baseCollated: 345, baseVotes: { CPA: 27800, DPP: 35900, PL: 18450, PPNN: 2800 } },
-      { id: 'lga-alimosho', name: 'Alimosho LGA', state: 'Lagos', totalPus: 620, baseCollated: 540, baseVotes: { CPA: 41200, DPP: 22400, PL: 53100, PPNN: 4600 } },
-      { id: 'lga-etiosa', name: 'Eti-Osa LGA', state: 'Lagos', totalPus: 340, baseCollated: 298, baseVotes: { CPA: 24600, DPP: 14200, PL: 39800, PPNN: 2100 } },
-      { id: 'lga-surulere', name: 'Surulere LGA', state: 'Lagos', totalPus: 395, baseCollated: 360, baseVotes: { CPA: 36400, DPP: 19800, PL: 31200, PPNN: 3100 } },
-      { id: 'lga-kosofe', name: 'Kosofe LGA', state: 'Lagos', totalPus: 310, baseCollated: 275, baseVotes: { CPA: 30100, DPP: 24500, PL: 19400, PPNN: 2950 } },
-      { id: 'lga-fagge', name: 'Fagge LGA', state: 'Kano', totalPus: 320, baseCollated: 292, baseVotes: { CPA: 18400, DPP: 9600, PL: 3100, PPNN: 58700 } },
-      { id: 'lga-tarauni', name: 'Tarauni LGA', state: 'Kano', totalPus: 280, baseCollated: 241, baseVotes: { CPA: 15200, DPP: 8100, PL: 2600, PPNN: 46300 } },
-      { id: 'lga-nassarawa-kn', name: 'Nassarawa LGA', state: 'Kano', totalPus: 350, baseCollated: 305, baseVotes: { CPA: 22100, DPP: 11400, PL: 3900, PPNN: 54200 } },
-      { id: 'lga-obio-akpor', name: 'Obio-Akpor LGA', state: 'Rivers', totalPus: 420, baseCollated: 381, baseVotes: { CPA: 19800, DPP: 47200, PL: 24600, PPNN: 1800 } },
-      { id: 'lga-phalga', name: 'Port Harcourt LGA', state: 'Rivers', totalPus: 300, baseCollated: 256, baseVotes: { CPA: 16400, DPP: 28900, PL: 24700, PPNN: 1400 } },
-      { id: 'lga-amac', name: 'AMAC Area Council', state: 'FCT', totalPus: 380, baseCollated: 340, baseVotes: { CPA: 22100, DPP: 18400, PL: 34900, PPNN: 3200 } },
-      { id: 'lga-bwari', name: 'Bwari Area Council', state: 'FCT', totalPus: 220, baseCollated: 186, baseVotes: { CPA: 9800, DPP: 11200, PL: 28600, PPNN: 1100 } },
-      { id: 'lga-kaduna-north', name: 'Kaduna North LGA', state: 'Kaduna', totalPus: 340, baseCollated: 295, baseVotes: { CPA: 38200, DPP: 29400, PL: 12100, PPNN: 11200 } },
-      { id: 'lga-kaduna-south', name: 'Kaduna South LGA', state: 'Kaduna', totalPus: 310, baseCollated: 260, baseVotes: { CPA: 31500, DPP: 33800, PL: 15400, PPNN: 8900 } },
-      { id: 'lga-ibadan-north', name: 'Ibadan North LGA', state: 'Oyo', totalPus: 410, baseCollated: 375, baseVotes: { CPA: 39100, DPP: 36200, PL: 18700, PPNN: 2400 } },
-      { id: 'lga-ibadan-sw', name: 'Ibadan South-West LGA', state: 'Oyo', totalPus: 360, baseCollated: 318, baseVotes: { CPA: 34800, DPP: 31200, PL: 16900, PPNN: 1900 } },
-      { id: 'lga-enugu-north', name: 'Enugu North LGA', state: 'Enugu', totalPus: 290, baseCollated: 270, baseVotes: { CPA: 4200, DPP: 12800, PL: 58400, PPNN: 800 } },
-      { id: 'lga-nsukka', name: 'Nsukka LGA', state: 'Enugu', totalPus: 320, baseCollated: 285, baseVotes: { CPA: 5100, DPP: 14200, PL: 61200, PPNN: 950 } },
-      { id: 'lga-maiduguri', name: 'Maiduguri LGA', state: 'Borno', totalPus: 380, baseCollated: 340, baseVotes: { CPA: 54200, DPP: 19800, PL: 4100, PPNN: 8300 } },
-      { id: 'lga-jere', name: 'Jere LGA', state: 'Borno', totalPus: 290, baseCollated: 245, baseVotes: { CPA: 41800, DPP: 16200, PL: 3200, PPNN: 6400 } },
-    ];
+    const primaryHubOverrides: Record<
+      string,
+      { totalPus: number; baseCollated: number; baseVotes: Record<'CPA' | 'DPP' | 'PL' | 'PPNN', number> }
+    > = {
+      'ikeja': { totalPus: 450, baseCollated: 412, baseVotes: { CPA: 42350, DPP: 28140, PL: 21980, PPNN: 3200 } },
+      'lagos mainland': { totalPus: 380, baseCollated: 345, baseVotes: { CPA: 27800, DPP: 35900, PL: 18450, PPNN: 2800 } },
+      'alimosho': { totalPus: 620, baseCollated: 540, baseVotes: { CPA: 41200, DPP: 22400, PL: 53100, PPNN: 4600 } },
+      'eti-osa': { totalPus: 340, baseCollated: 298, baseVotes: { CPA: 24600, DPP: 14200, PL: 39800, PPNN: 2100 } },
+      'surulere': { totalPus: 395, baseCollated: 360, baseVotes: { CPA: 36400, DPP: 19800, PL: 31200, PPNN: 3100 } },
+      'kosofe': { totalPus: 310, baseCollated: 275, baseVotes: { CPA: 30100, DPP: 24500, PL: 19400, PPNN: 2950 } },
+      'fagge': { totalPus: 320, baseCollated: 292, baseVotes: { CPA: 18400, DPP: 9600, PL: 3100, PPNN: 58700 } },
+      'tarauni': { totalPus: 280, baseCollated: 241, baseVotes: { CPA: 15200, DPP: 8100, PL: 2600, PPNN: 46300 } },
+      'nasarawa': { totalPus: 350, baseCollated: 305, baseVotes: { CPA: 22100, DPP: 11400, PL: 3900, PPNN: 54200 } },
+      'obio-akpor': { totalPus: 420, baseCollated: 381, baseVotes: { CPA: 19800, DPP: 47200, PL: 24600, PPNN: 1800 } },
+      'port harcourt': { totalPus: 300, baseCollated: 256, baseVotes: { CPA: 16400, DPP: 28900, PL: 24700, PPNN: 1400 } },
+      'municipal': { totalPus: 380, baseCollated: 340, baseVotes: { CPA: 22100, DPP: 18400, PL: 34900, PPNN: 3200 } },
+      'bwari': { totalPus: 220, baseCollated: 186, baseVotes: { CPA: 9800, DPP: 11200, PL: 28600, PPNN: 1100 } },
+      'kaduna north': { totalPus: 340, baseCollated: 295, baseVotes: { CPA: 38200, DPP: 29400, PL: 12100, PPNN: 11200 } },
+      'kaduna south': { totalPus: 310, baseCollated: 260, baseVotes: { CPA: 31500, DPP: 33800, PL: 15400, PPNN: 8900 } },
+      'ibadan north': { totalPus: 410, baseCollated: 375, baseVotes: { CPA: 39100, DPP: 36200, PL: 18700, PPNN: 2400 } },
+      'ibadan south-west': { totalPus: 360, baseCollated: 318, baseVotes: { CPA: 34800, DPP: 31200, PL: 16900, PPNN: 1900 } },
+      'enugu north': { totalPus: 290, baseCollated: 270, baseVotes: { CPA: 4200, DPP: 12800, PL: 58400, PPNN: 800 } },
+      'nsukka': { totalPus: 320, baseCollated: 285, baseVotes: { CPA: 5100, DPP: 14200, PL: 61200, PPNN: 950 } },
+      'maiduguri': { totalPus: 380, baseCollated: 340, baseVotes: { CPA: 54200, DPP: 19800, PL: 4100, PPNN: 8300 } },
+      'jere': { totalPus: 290, baseCollated: 245, baseVotes: { CPA: 41800, DPP: 16200, PL: 3200, PPNN: 6400 } },
+    };
 
-    const coveredStates = new Set(primaryHubBases.map((b) => b.state.toLowerCase()));
-    const additionalBases: typeof primaryHubBases = [];
+    const allBases: Array<{
+      id: string;
+      name: string;
+      state: string;
+      totalPus: number;
+      baseCollated: number;
+      baseVotes: Record<'CPA' | 'DPP' | 'PL' | 'PPNN', number>;
+    }> = [];
 
     Object.values(NIGERIA_STATE_GEOMETRIES).forEach((geom) => {
-      if (coveredStates.has(geom.name.toLowerCase())) return;
-
+      const stateLgas = getOfficialLgasForState(geom.name);
       const zone = geom.zone;
-      let voteRatio: { CPA: number; DPP: number; PL: number; PPNN: number };
+
+      let defaultRatio: { CPA: number; DPP: number; PL: number; PPNN: number };
       if (zone === 'North West') {
-        voteRatio = { CPA: 0.44, DPP: 0.28, PL: 0.08, PPNN: 0.20 };
+        defaultRatio = { CPA: 0.44, DPP: 0.28, PL: 0.08, PPNN: 0.20 };
       } else if (zone === 'North East') {
-        voteRatio = { CPA: 0.48, DPP: 0.38, PL: 0.06, PPNN: 0.08 };
+        defaultRatio = { CPA: 0.48, DPP: 0.38, PL: 0.06, PPNN: 0.08 };
       } else if (zone === 'North Central') {
-        voteRatio = { CPA: 0.36, DPP: 0.34, PL: 0.25, PPNN: 0.05 };
+        defaultRatio = { CPA: 0.36, DPP: 0.34, PL: 0.25, PPNN: 0.05 };
       } else if (zone === 'South West') {
-        voteRatio = { CPA: 0.46, DPP: 0.24, PL: 0.27, PPNN: 0.03 };
+        defaultRatio = { CPA: 0.46, DPP: 0.24, PL: 0.27, PPNN: 0.03 };
       } else if (zone === 'South East') {
-        voteRatio = { CPA: 0.08, DPP: 0.22, PL: 0.68, PPNN: 0.02 };
+        defaultRatio = { CPA: 0.08, DPP: 0.22, PL: 0.68, PPNN: 0.02 };
       } else {
         // South South
-        voteRatio = { CPA: 0.28, DPP: 0.42, PL: 0.27, PPNN: 0.03 };
+        defaultRatio = { CPA: 0.28, DPP: 0.42, PL: 0.27, PPNN: 0.03 };
       }
 
-      const lgaNames = [`${geom.name} Central`, `${geom.name} North`, `${geom.name} South`];
-      lgaNames.forEach((lgaName, idx) => {
-        const pus = 260 + idx * 45;
-        const collated = Math.round(pus * (0.86 + idx * 0.04));
-        const totalV = collated * 125;
-        additionalBases.push({
-          id: `lga-${geom.name.toLowerCase().replace(/\s+/g, '-')}-${idx + 1}`,
-          name: lgaName,
+      stateLgas.forEach((lgaName) => {
+        const cleanName = lgaName.trim();
+        const lowerName = cleanName.toLowerCase();
+        const baseId = `lga-${geom.name.toLowerCase().replace(/\s+/g, '-')}-${lowerName.replace(/[^a-z0-9]+/g, '-')}`;
+        const legacySimpleId = `lga-${lowerName.replace(/[^a-z0-9]+/g, '-')}`;
+        const override = primaryHubOverrides[lowerName] || primaryHubOverrides[cleanName];
+
+        if (override) {
+          allBases.push({
+            id: legacySimpleId in LGA_MAP_POLYGONS ? legacySimpleId : baseId,
+            name: cleanName.endsWith('LGA') || cleanName.endsWith('Council') ? cleanName : `${cleanName} LGA`,
+            state: geom.name,
+            totalPus: override.totalPus,
+            baseCollated: override.baseCollated,
+            baseVotes: { ...override.baseVotes },
+          });
+          return;
+        }
+
+        // Deterministic pseudo-random seed per state + LGA
+        const seed = (geom.name + '_' + cleanName)
+          .split('')
+          .reduce((acc, c) => (acc << 5) - acc + c.charCodeAt(0), 0);
+        const hash = Math.abs(seed);
+
+        const pus = 175 + (hash % 210);
+        const collatedPct = 0.85 + ((hash % 12) / 100);
+        const collated = Math.round(pus * collatedPct);
+        const totalV = collated * (110 + (hash % 30));
+
+        // Deterministic minor margin variation (+/- 3%)
+        const deltaCPA = ((hash % 7) - 3) / 100;
+        const deltaDPP = (((hash >> 2) % 7) - 3) / 100;
+        const ratioCPA = Math.max(0.04, defaultRatio.CPA + deltaCPA);
+        const ratioDPP = Math.max(0.04, defaultRatio.DPP + deltaDPP);
+        const rem = 1 - (ratioCPA + ratioDPP);
+        const ratioPL = Math.max(0.02, (defaultRatio.PL * rem) / (defaultRatio.PL + defaultRatio.PPNN));
+        const ratioPPNN = Math.max(0.02, 1 - (ratioCPA + ratioDPP + ratioPL));
+
+        allBases.push({
+          id: legacySimpleId in LGA_MAP_POLYGONS ? legacySimpleId : baseId,
+          name: cleanName.endsWith('LGA') || cleanName.endsWith('Council') ? cleanName : `${cleanName} LGA`,
           state: geom.name,
           totalPus: pus,
           baseCollated: collated,
           baseVotes: {
-            CPA: Math.round(totalV * voteRatio.CPA),
-            DPP: Math.round(totalV * voteRatio.DPP),
-            PL: Math.round(totalV * voteRatio.PL),
-            PPNN: Math.round(totalV * voteRatio.PPNN),
+            CPA: Math.round(totalV * ratioCPA),
+            DPP: Math.round(totalV * ratioDPP),
+            PL: Math.round(totalV * ratioPL),
+            PPNN: Math.round(totalV * ratioPPNN),
           },
         });
       });
     });
 
-    const allBases = [...primaryHubBases, ...additionalBases];
-
     const candidateNames: Record<string, string> = {
       CPA: 'Ahmed Okwute',
-      DPP: 'Abubakuar Matthew',
+      DPP: 'Abubakar Matthew',
       PL: 'Peter Muhammed',
       PPNN: 'Borro Nassiru',
     };
@@ -321,7 +369,8 @@ export const NigeriaHeatMap: React.FC<NigeriaHeatMapProps> = ({
       const matchingStoreResults = results.filter(
         (r) =>
           r.status === 'PUBLISHED' &&
-          r.pollingUnitName?.toLowerCase().includes(base.state.toLowerCase())
+          (r.pollingUnitName?.toLowerCase().includes(base.state.toLowerCase()) ||
+            r.pollingUnitName?.toLowerCase().includes(base.name.toLowerCase()))
       );
 
       const dynamicVotes = { ...base.baseVotes };
@@ -579,8 +628,8 @@ export const NigeriaHeatMap: React.FC<NigeriaHeatMapProps> = ({
           </h2>
           <p className="text-xs text-[#718579]">
             {geoLevel === 'state'
-              ? `All 37 Federation Administrative Hubs · ${totalCollatedAcrossLgas.toLocaleString()} / ${totalPusAcrossLgas.toLocaleString()} PUs Collated`
-              : `${mapLgas.length} Monitored LGAs · ${mapLgas.reduce(
+              ? `All 37 Federation Administrative Hubs (${TOTAL_OFFICIAL_LGAS_COUNT} Official LGAs) · ${totalCollatedAcrossLgas.toLocaleString()} / ${totalPusAcrossLgas.toLocaleString()} PUs Collated`
+              : `${mapLgas.length} Official LGAs · ${mapLgas.reduce(
                   (a, b) => a + b.baseCollated,
                   0
                 )} of ${mapLgas.reduce((a, b) => a + b.totalPus, 0)} PUs collated`}
@@ -649,38 +698,123 @@ export const NigeriaHeatMap: React.FC<NigeriaHeatMapProps> = ({
       </div>
 
       {/* --------------------------------------------------------------------- */}
-      {/* State Scoping Selector Chips for LGA Mode */}
+      {/* Tactical Quick Navigation Bar (State & LGA Alphabetical Dropdowns + Search) */}
       {/* --------------------------------------------------------------------- */}
-      {geoLevel === 'lga' && (
-        <div className="flex items-center gap-1.5 overflow-x-auto py-2.5 border-b border-[#1C2E24]/60 text-xs no-scrollbar">
-          <span className="text-[11px] font-bold uppercase tracking-wider text-[#718579] shrink-0 mr-1 flex items-center gap-1">
-            <Layers className="w-3.5 h-3.5 text-[#10B981]" />
-            Select State:
-          </span>
-          {statesInView.map((st) => {
-            const isSelected = effectiveLgaState.toLowerCase() === st.toLowerCase();
-            return (
-              <button
-                key={st}
-                onClick={() => {
-                  setActiveLgaState(st);
-                  const firstLga = lgaHeatmapData.find(
-                    (l) => l.state.toLowerCase() === st.toLowerCase()
-                  );
-                  if (firstLga) setSelectedMapLgaId(firstLga.id);
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 py-2.5 px-3 border-b border-[#1C2E24]/70 bg-[#080E0A]/80 rounded-xl my-2 text-xs">
+        <div className="flex flex-wrap items-center gap-2">
+          {/* State Alphabetical Dropdown */}
+          <div className="flex items-center gap-1.5 bg-[#0D1812] border border-[#1F3327] rounded-lg px-2.5 py-1.5 focus-within:border-emerald-500 transition">
+            <Globe className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+            <label htmlFor="heatmap-state-select" className="text-[10px] font-bold uppercase tracking-wider text-[#718579] shrink-0">
+              State:
+            </label>
+            <select
+              id="heatmap-state-select"
+              value={effectiveLgaState}
+              onChange={(e) => {
+                const selectedState = e.target.value;
+                setActiveLgaState(selectedState);
+                const stateItem = stateHeatmapData.find((s) => s.name === selectedState);
+                if (stateItem) {
+                  setSelectedMapStateId(stateItem.id);
+                }
+                const firstLga = lgaHeatmapData.find((l) => l.state === selectedState);
+                if (firstLga) {
+                  setSelectedMapLgaId(firstLga.id);
+                }
+              }}
+              className="bg-transparent text-white font-bold text-xs focus:outline-none cursor-pointer pr-1"
+            >
+              {statesInView.map((stName) => {
+                const st = stateHeatmapData.find((s) => s.name === stName);
+                return (
+                  <option key={stName} value={stName} className="bg-[#0E1712] text-white">
+                    {stName} {st ? `(${st.leadingParty} lead · ${st.lgaCount} LGAs)` : ''}
+                  </option>
+                );
+              })}
+            </select>
+          </div>
+
+          {/* LGA Alphabetical Dropdown (active when geoLevel === 'lga') */}
+          {geoLevel === 'lga' && (
+            <div className="flex items-center gap-1.5 bg-[#0D1812] border border-[#1F3327] rounded-lg px-2.5 py-1.5 focus-within:border-emerald-500 transition">
+              <MapPin className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+              <label htmlFor="heatmap-lga-select" className="text-[10px] font-bold uppercase tracking-wider text-[#718579] shrink-0">
+                LGA:
+              </label>
+              <select
+                id="heatmap-lga-select"
+                value={activeSelectedLga.id}
+                onChange={(e) => {
+                  const lgaId = e.target.value;
+                  setSelectedMapLgaId(lgaId);
                 }}
-                className={`shrink-0 px-3 py-1 rounded-lg border font-bold text-xs transition ${
-                  isSelected
-                    ? 'bg-[#10B981] text-black border-[#10B981] shadow-md shadow-emerald-950/50'
-                    : 'bg-[#080E0A] text-[#94A89D] border-[#1C2E24] hover:text-white hover:border-[#2A4435]'
-                }`}
+                className="bg-transparent text-white font-bold text-xs focus:outline-none cursor-pointer pr-1 max-w-[210px] truncate"
               >
-                {st}
-              </button>
-            );
-          })}
+                {mapLgas
+                  .slice()
+                  .sort((a, b) => a.name.localeCompare(b.name))
+                  .map((lga) => (
+                    <option key={lga.id} value={lga.id} className="bg-[#0E1712] text-white">
+                      {lga.name} ({lga.leadingParty} {lga.leadingPct}%)
+                    </option>
+                  ))}
+              </select>
+            </div>
+          )}
         </div>
-      )}
+
+        {/* Quick Search Jump Input */}
+        <div className="relative flex-1 sm:max-w-[240px]">
+          <Search className="w-3.5 h-3.5 text-[#718579] absolute left-2.5 top-1/2 -translate-y-1/2" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => {
+              const q = e.target.value;
+              setSearchQuery(q);
+              if (q.trim().length >= 2) {
+                if (geoLevel === 'state') {
+                  const matchedState = stateHeatmapData.find((s) =>
+                    s.name.toLowerCase().includes(q.toLowerCase())
+                  );
+                  if (matchedState) setSelectedMapStateId(matchedState.id);
+                } else {
+                  const matchedInState = mapLgas.find((l) =>
+                    l.name.toLowerCase().includes(q.toLowerCase())
+                  );
+                  if (matchedInState) {
+                    setSelectedMapLgaId(matchedInState.id);
+                  } else {
+                    const anyMatch = lgaHeatmapData.find((l) =>
+                      l.name.toLowerCase().includes(q.toLowerCase())
+                    );
+                    if (anyMatch) {
+                      setActiveLgaState(anyMatch.state);
+                      setSelectedMapLgaId(anyMatch.id);
+                    }
+                  }
+                }
+              }
+            }}
+            placeholder={
+              geoLevel === 'state'
+                ? 'Quick search 37 states...'
+                : `Quick search ${effectiveLgaState} LGAs...`
+            }
+            className="w-full pl-8 pr-7 py-1.5 bg-[#0D1812] border border-[#1F3327] rounded-lg text-xs text-white placeholder-[#718579] focus:outline-none focus:border-emerald-500 transition"
+          />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery('')}
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-[#718579] hover:text-white"
+            >
+              <X className="w-3 h-3" />
+            </button>
+          )}
+        </div>
+      </div>
 
       {/* --------------------------------------------------------------------- */}
       {/* Main Tactical Canvas Layout */}
@@ -724,7 +858,13 @@ export const NigeriaHeatMap: React.FC<NigeriaHeatMapProps> = ({
             }`}
           >
             <svg
-              viewBox={geoLevel === 'state' ? NIGERIA_MAP_VIEWBOX : '0 0 380 250'}
+              viewBox={
+                geoLevel === 'state'
+                  ? NIGERIA_MAP_VIEWBOX
+                  : mapLgas.length <= 6 && mapLgas.every((l) => LGA_MAP_POLYGONS[l.id])
+                  ? '0 0 380 250'
+                  : '0 0 680 460'
+              }
               role="region"
               aria-label="National Presidential Collation Map of Nigeria"
               className="w-full h-full drop-shadow-2xl select-none"
@@ -743,7 +883,7 @@ export const NigeriaHeatMap: React.FC<NigeriaHeatMapProps> = ({
                 // LGA Layer for Active State
                 // -----------------------------------------------------------
                 <g key="lga-layer">
-                  {mapLgas.some((l) => LGA_MAP_POLYGONS[l.id]) ? (
+                  {mapLgas.length <= 6 && mapLgas.every((l) => LGA_MAP_POLYGONS[l.id]) ? (
                     mapLgas.map((lga) => {
                       const poly = LGA_MAP_POLYGONS[lga.id];
                       if (!poly) return null;
@@ -844,84 +984,117 @@ export const NigeriaHeatMap: React.FC<NigeriaHeatMapProps> = ({
                       );
                     })
                   ) : (
-                    // Tactical District Matrix for States without custom micro-polygons
+                    // Dynamic Tactical District Radar Matrix for all official INEC LGAs
                     <g key="district-matrix">
-                      {mapLgas.map((lga, idx) => {
-                        const cellW = 100;
-                        const cellH = 65;
-                        const cols = Math.min(3, mapLgas.length);
-                        const row = Math.floor(idx / cols);
-                        const col = idx % cols;
-                        const startX = 35 + col * 110;
-                        const startY = 45 + row * 80;
-                        const isSelected = selectedMapLgaId === lga.id;
-                        const fillColor = getFillColor(lga);
+                      {(() => {
+                        const total = mapLgas.length;
+                        let cols = 3;
+                        if (total > 28) cols = 7;
+                        else if (total > 20) cols = 6;
+                        else if (total > 12) cols = 5;
+                        else if (total > 6) cols = 4;
+                        else cols = 3;
 
-                        return (
-                          <g
-                            key={lga.id}
-                            role="button"
-                            tabIndex={0}
-                            aria-label={`${lga.name}: ${lga.leadingParty} leading, ${lga.reportingPct}% collated. Click to inspect.`}
-                            aria-pressed={isSelected}
-                            onClick={() => {
-                              setSelectedMapLgaId(lga.id);
-                              setInspectModalUnit(lga);
-                            }}
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter' || e.key === ' ') {
-                                e.preventDefault();
+                        const rows = Math.ceil(total / cols);
+                        const availW = 620;
+                        const availH = 390;
+                        const cellGapX = cols > 5 ? 6 : 8;
+                        const cellGapY = rows > 5 ? 6 : 8;
+                        const cellW = (availW - (cols - 1) * cellGapX) / cols;
+                        const cellH = Math.min(rows > 5 ? 44 : 58, (availH - (rows - 1) * cellGapY) / rows);
+                        const startLeft = 30;
+                        const startTop = 45;
+
+                        return mapLgas.map((lga, idx) => {
+                          const row = Math.floor(idx / cols);
+                          const col = idx % cols;
+                          const startX = startLeft + col * (cellW + cellGapX);
+                          const startY = startTop + row * (cellH + cellGapY);
+                          const isSelected = selectedMapLgaId === lga.id;
+                          const fillColor = getFillColor(lga);
+                          const displayName = cols >= 6 ? lga.name.replace(/\s+LGA$/i, '') : lga.name;
+
+                          return (
+                            <g
+                              key={lga.id}
+                              role="button"
+                              tabIndex={0}
+                              aria-label={`${lga.name}: ${lga.leadingParty} leading, ${lga.reportingPct}% collated. Click to inspect.`}
+                              aria-pressed={isSelected}
+                              onClick={() => {
                                 setSelectedMapLgaId(lga.id);
                                 setInspectModalUnit(lga);
-                              }
-                            }}
-                            className="cursor-pointer transition-all duration-150 focus:outline-none"
-                          >
-                            <rect
-                              x={startX}
-                              y={startY}
-                              width={cellW}
-                              height={cellH}
-                              rx={10}
-                              fill={fillColor}
-                              fillOpacity={isSelected ? 0.95 : 0.75}
-                              stroke={isSelected ? '#FFFFFF' : '#1C2E24'}
-                              strokeWidth={isSelected ? 2.5 : 1.2}
-                            />
-                            <text
-                              x={startX + cellW / 2}
-                              y={startY + 24}
-                              fill="#FFFFFF"
-                              fontSize="11"
-                              fontWeight="bold"
-                              textAnchor="middle"
+                              }}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter' || e.key === ' ') {
+                                  e.preventDefault();
+                                  setSelectedMapLgaId(lga.id);
+                                  setInspectModalUnit(lga);
+                                }
+                              }}
+                              className="cursor-pointer transition-all duration-150 focus:outline-none"
                             >
-                              {lga.name}
-                            </text>
-                            <text
-                              x={startX + cellW / 2}
-                              y={startY + 42}
-                              fill={isSelected ? '#FDE047' : '#FFFFFFDD'}
-                              fontSize="9"
-                              fontWeight="bold"
-                              textAnchor="middle"
-                            >
-                              {mapHeatMode === 'party'
-                                ? `${lga.leadingParty} · ${lga.leadingPct}%`
-                                : `${lga.reportingPct}% Collated`}
-                            </text>
-                            <text
-                              x={startX + cellW / 2}
-                              y={startY + 55}
-                              fill="#FFFFFF99"
-                              fontSize="8"
-                              textAnchor="middle"
-                            >
-                              {lga.baseCollated} / {lga.totalPus} PUs
-                            </text>
-                          </g>
-                        );
-                      })}
+                              <rect
+                                x={startX}
+                                y={startY}
+                                width={cellW}
+                                height={cellH}
+                                rx={cols > 5 ? 6 : 10}
+                                fill={fillColor}
+                                fillOpacity={isSelected ? 0.95 : 0.75}
+                                stroke={isSelected ? '#34D399' : '#1C2E24'}
+                                strokeWidth={isSelected ? 2.5 : 1.2}
+                              />
+                              {isSelected && (
+                                <rect
+                                  x={startX - 2}
+                                  y={startY - 2}
+                                  width={cellW + 4}
+                                  height={cellH + 4}
+                                  rx={cols > 5 ? 8 : 12}
+                                  fill="none"
+                                  stroke="#FDE047"
+                                  strokeWidth={1.5}
+                                  strokeDasharray="4 2"
+                                />
+                              )}
+                              <text
+                                x={startX + cellW / 2}
+                                y={startY + (cellH > 48 ? 20 : 16)}
+                                fill="#FFFFFF"
+                                fontSize={cols >= 6 ? 9 : 11}
+                                fontWeight="bold"
+                                textAnchor="middle"
+                              >
+                                {displayName}
+                              </text>
+                              <text
+                                x={startX + cellW / 2}
+                                y={startY + (cellH > 48 ? 36 : 28)}
+                                fill={isSelected ? '#FDE047' : '#FFFFFFDD'}
+                                fontSize={cols >= 6 ? 8 : 9}
+                                fontWeight="bold"
+                                textAnchor="middle"
+                              >
+                                {mapHeatMode === 'party'
+                                  ? `${lga.leadingParty} · ${lga.leadingPct}%`
+                                  : `${lga.reportingPct}% Collated`}
+                              </text>
+                              {cellH > 48 && (
+                                <text
+                                  x={startX + cellW / 2}
+                                  y={startY + 50}
+                                  fill="#FFFFFF99"
+                                  fontSize="8"
+                                  textAnchor="middle"
+                                >
+                                  {lga.baseCollated} / {lga.totalPus} PUs
+                                </text>
+                              )}
+                            </g>
+                          );
+                        });
+                      })()}
                     </g>
                   )}
                 </g>
@@ -1498,102 +1671,132 @@ export const NigeriaHeatMap: React.FC<NigeriaHeatMapProps> = ({
       {/* Dedicated Interactive LGA District Cards Grid (Under Map in LGA mode) */}
       {/* --------------------------------------------------------------------- */}
       {geoLevel === 'lga' && (
-        <div className="mt-5 pt-4 border-t border-[#1C2E24] space-y-3">
-          <div className="flex items-center justify-between">
+        <div className="mt-4 pt-3 border-t border-[#1C2E24] space-y-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <div>
               <h3 className="text-sm font-extrabold text-white flex items-center gap-2">
                 <MapPin className="w-4 h-4 text-emerald-400" />
-                <span>{effectiveLgaState} State LGA District Hubs ({mapLgas.length})</span>
+                <span>
+                  {effectiveLgaState} State LGA District Hubs ({mapLgas.length})
+                </span>
               </h3>
               <p className="text-xs text-[#718579]">
-                Tap any district card to view enlarged telemetry, party breakdown, or audit its polling units.
+                {compact
+                  ? 'Official canonical INEC LGAs. Select via dropdown or expand district cards.'
+                  : 'Tap any district card to view enlarged telemetry, party breakdown, or audit its polling units.'}
               </p>
             </div>
-            <button
-              onClick={() => handleAuditUnit(activeSelectedState)}
-              className="text-xs font-bold text-emerald-400 hover:text-emerald-300 flex items-center gap-1 transition"
-            >
-              <span>Audit All {effectiveLgaState} Units</span>
-              <ChevronRight className="w-3.5 h-3.5" />
-            </button>
-          </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            {mapLgas.map((lga) => {
-              const isSelected = selectedMapLgaId === lga.id;
-              const partyColor = PARTY_COLORS[lga.leadingParty];
-
-              return (
-                <div
-                  key={lga.id}
-                  onClick={() => {
-                    setSelectedMapLgaId(lga.id);
-                    setInspectModalUnit(lga);
-                  }}
-                  className={`p-3.5 rounded-2xl border transition-all duration-200 cursor-pointer space-y-2.5 ${
-                    isSelected
-                      ? 'bg-gradient-to-b from-[#122E1E] to-[#0A160F] border-emerald-500 shadow-lg shadow-emerald-950/40'
-                      : 'bg-[#080E0A] border-[#1C2E24] hover:border-[#2D4E3A] hover:bg-[#0B150F]'
-                  }`}
+            <div className="flex items-center gap-2 self-start sm:self-auto">
+              {compact && (
+                <button
+                  onClick={() => setShowCompactDistrictGrid(!showCompactDistrictGrid)}
+                  className="px-2.5 py-1 rounded-lg bg-[#14231B] border border-[#233B2C] text-xs font-bold text-emerald-400 hover:text-white flex items-center gap-1 transition"
                 >
-                  <div className="flex items-start justify-between gap-2">
-                    <div>
-                      <h4 className="text-sm font-black text-white">{lga.name}</h4>
-                      <p className="text-[11px] text-[#718579] font-medium">
-                        {lga.baseCollated} of {lga.totalPus} Polling Units Collated
-                      </p>
-                    </div>
-
-                    <span
-                      className="px-2 py-0.5 rounded-lg text-xs font-black border font-mono shrink-0"
-                      style={{
-                        backgroundColor: `${partyColor}20`,
-                        borderColor: `${partyColor}50`,
-                        color: partyColor,
-                      }}
-                    >
-                      {lga.leadingParty} {lga.leadingPct}%
-                    </span>
-                  </div>
-
-                  {/* Collation Progress Bar */}
-                  <div className="space-y-1">
-                    <div className="flex items-center justify-between text-[10px] text-[#718579]">
-                      <span className="font-semibold">Collation Progress</span>
-                      <span className="font-bold text-emerald-400">{lga.reportingPct}%</span>
-                    </div>
-                    <div className="w-full h-1.5 rounded-full bg-[#121F18] overflow-hidden">
-                      <div
-                        className="h-full rounded-full transition-all duration-300"
-                        style={{
-                          width: `${lga.reportingPct}%`,
-                          backgroundColor: partyColor,
-                        }}
-                      />
-                    </div>
-                  </div>
-
-                  {/* Bottom Stats & Inspect Button */}
-                  <div className="flex items-center justify-between pt-1 border-t border-[#1C2E24]/60 text-xs">
-                    <span className="text-[11px] text-[#94A89D] font-mono">
-                      {lga.totalVotes.toLocaleString()} votes ({lga.margin})
-                    </span>
-
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setInspectModalUnit(lga);
-                      }}
-                      className="text-xs font-bold text-emerald-400 hover:text-white flex items-center gap-1 transition"
-                    >
-                      <span>Inspect</span>
-                      <ExternalLink className="w-3 h-3" />
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
+                  <span>
+                    {showCompactDistrictGrid
+                      ? 'Collapse Hubs'
+                      : `Expand Hubs (${mapLgas.length})`}
+                  </span>
+                  <ChevronDown
+                    className={`w-3.5 h-3.5 transition-transform duration-200 ${
+                      showCompactDistrictGrid ? 'rotate-180' : ''
+                    }`}
+                  />
+                </button>
+              )}
+              <button
+                onClick={() => handleAuditUnit(activeSelectedState)}
+                className="text-xs font-bold text-emerald-400 hover:text-emerald-300 flex items-center gap-1 transition"
+              >
+                <span>Audit All {effectiveLgaState} Units</span>
+                <ChevronRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
           </div>
+
+          {/* District Cards Grid: Always open in full view, conditionally in compact mode */}
+          {(!compact || showCompactDistrictGrid) && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 pt-1">
+              {mapLgas.map((lga) => {
+                const isSelected = selectedMapLgaId === lga.id;
+                const partyColor = PARTY_COLORS[lga.leadingParty];
+
+                return (
+                  <div
+                    key={lga.id}
+                    onClick={() => {
+                      setSelectedMapLgaId(lga.id);
+                      setInspectModalUnit(lga);
+                    }}
+                    className={`p-3.5 rounded-2xl border transition-all duration-200 cursor-pointer space-y-2.5 ${
+                      isSelected
+                        ? 'bg-gradient-to-b from-[#122E1E] to-[#0A160F] border-emerald-500 shadow-lg shadow-emerald-950/40'
+                        : 'bg-[#080E0A] border-[#1C2E24] hover:border-[#2D4E3A] hover:bg-[#0B150F]'
+                    }`}
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <h4 className="text-sm font-black text-white">{lga.name}</h4>
+                        <p className="text-[11px] text-[#718579] font-medium">
+                          {lga.baseCollated} of {lga.totalPus} Polling Units Collated
+                        </p>
+                      </div>
+
+                      <span
+                        className="px-2 py-0.5 rounded-lg text-xs font-black border font-mono shrink-0"
+                        style={{
+                          backgroundColor: `${partyColor}20`,
+                          borderColor: `${partyColor}50`,
+                          color: partyColor,
+                        }}
+                      >
+                        {lga.leadingParty} {lga.leadingPct}%
+                      </span>
+                    </div>
+
+                    {/* Collation Progress Bar */}
+                    <div className="space-y-1">
+                      <div className="flex items-center justify-between text-[10px] text-[#718579]">
+                        <span className="font-semibold">Collation Progress</span>
+                        <span className="font-bold text-emerald-400">
+                          {lga.reportingPct}%
+                        </span>
+                      </div>
+                      <div className="w-full h-1.5 rounded-full bg-[#121F18] overflow-hidden">
+                        <div
+                          className="h-full rounded-full transition-all duration-300"
+                          style={{
+                            width: `${lga.reportingPct}%`,
+                            backgroundColor: partyColor,
+                          }}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Bottom Stats & Inspect Button */}
+                    <div className="flex items-center justify-between pt-1 border-t border-[#1C2E24]/60 text-xs">
+                      <span className="text-[11px] text-[#94A89D] font-mono">
+                        {lga.totalVotes.toLocaleString()} votes ({lga.margin})
+                      </span>
+
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedMapLgaId(lga.id);
+                          setInspectModalUnit(lga);
+                        }}
+                        className="px-2 py-1 rounded bg-[#10B981]/15 hover:bg-[#10B981]/25 text-emerald-400 hover:text-emerald-300 text-xs font-bold flex items-center gap-1 transition"
+                      >
+                        <span>Inspect</span>
+                        <ExternalLink className="w-3 h-3" />
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       )}
 

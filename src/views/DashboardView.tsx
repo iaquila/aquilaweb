@@ -458,14 +458,14 @@ export const DashboardView: React.FC = () => {
 
       {/* 2. Executive Mid-Section for Election Officer: Tactical Heat Map (Reduced Width) & AI Projection Side-by-Side */}
       {isOfficerOrAbove && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
           {/* Tactical Heat Map with reduced width */}
-          <div className="transition-all duration-300">
+          <div className="transition-all duration-300 flex flex-col">
             <NigeriaHeatMap compact />
           </div>
 
           {/* AI Election Projection Engine */}
-          <div className="rounded-2xl border-2 border-[#10B981] bg-[#0E1712] p-5 shadow-xl space-y-4">
+          <div className="rounded-2xl border-2 border-[#10B981] bg-[#0E1712] p-5 shadow-xl flex flex-col justify-between space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div className="flex items-center gap-3">
                 <div className="w-9 h-9 rounded-xl bg-[#10B981] text-black flex items-center justify-center">
