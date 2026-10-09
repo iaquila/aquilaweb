@@ -60,7 +60,7 @@ export const ResultsView: React.FC = () => {
         <div>
           <h1 className="text-xl font-extrabold text-white">Results Collation &amp; Audit</h1>
           <p className="text-xs text-[#718579]">
-            Certified Polling Unit ballot tallies, form EC8A image audits, and INEC parallel reconciliation
+            Independent Polling Unit ballot tallies, form EC8A image audits, and parallel voter reconciliation
           </p>
         </div>
 
@@ -219,7 +219,7 @@ export const ResultsView: React.FC = () => {
                       {hasDiscrepancy && (
                         <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-red-500/20 text-red-400 border border-red-500/30 flex items-center gap-1">
                           <AlertTriangle className="w-3 h-3" />
-                          INEC Variance
+                          Parallel Variance
                         </span>
                       )}
                     </div>

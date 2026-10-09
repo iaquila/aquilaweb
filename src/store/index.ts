@@ -39,8 +39,8 @@ export const PREDEFINED_ACCOUNTS: PredefinedAccount[] = [
     roleTitle: 'Polling Unit Agent',
     organizationId: 'org-iaquila',
     organizationName: 'iAQUILA Situation Room HQ',
-    description: 'Stationed exclusively at PU 001 Ikeja Grammar School.',
-    assignedPus: ['pu-s25-lga-1-1'],
+    description: 'Stationed exclusively at PU 003 Allen Avenue Junction Hall.',
+    assignedPus: ['pu-s25-lga-1-3'],
   },
   {
     name: 'Dr. Adebayo Adeleke',
@@ -131,6 +131,8 @@ interface AppState {
   selectedPuFilter: string | null;
   setSelectedPuFilter: (pu: string | null) => void;
   consumePuFilter: () => string | null;
+  editingDraftResult: ResultSubmission | null;
+  setEditingDraftResult: (result: ResultSubmission | null) => void;
 }
 
 const defaultAccount = PREDEFINED_ACCOUNTS[0];
@@ -283,4 +285,6 @@ export const useAppStore = create<AppState>((set, get) => ({
     }
     return val;
   },
+  editingDraftResult: null,
+  setEditingDraftResult: (result) => set({ editingDraftResult: result }),
 }));

@@ -34,6 +34,7 @@ export const DashboardView: React.FC = () => {
     setSelectedIncidentId,
     setSelectedResultId,
     setSelectedPuFilter,
+    setEditingDraftResult,
     setActiveTab,
   } = useAppStore();
 
@@ -113,41 +114,67 @@ export const DashboardView: React.FC = () => {
       ? 'Field Agent'
       : 'Polling Unit Agent';
 
-  // Demo assigned PUs matching ASSIGNED_DEMO_PUS in app/(app)/(tabs)/index.tsx
-  const assignedDemoPus = [
+  // Base assigned polling units cluster in Ikeja
+  const baseAssignedPus = React.useMemo(() => [
     {
       id: 'pu-s25-lga-1-1',
-      name: 'Ward 1 PU 01 - Alausa Central',
-      code: 'PU/25/01/001',
+      name: 'PU 001 - Ikeja Grammar School, Ward A',
+      code: 'PU/25/01/01/001',
       lga: 'Ikeja',
       state: 'Lagos',
-      status: 'PUBLISHED' as const,
-      votes: 486,
-      accredited: 520,
     },
     {
       id: 'pu-s25-lga-1-2',
-      name: 'Ward 1 PU 02 - Secretariat Road',
-      code: 'PU/25/01/002',
+      name: 'PU 002 - Alausa Community Center',
+      code: 'PU/25/01/01/002',
       lga: 'Ikeja',
       state: 'Lagos',
-      status: 'DRAFT' as const,
-      votes: 312,
-      accredited: 410,
     },
     {
       id: 'pu-s25-lga-1-3',
-      name: 'Ward 2 PU 01 - Allen Junction',
-      code: 'PU/25/02/001',
+      name: 'PU 003 - Allen Avenue Junction Hall',
+      code: 'PU/25/01/02/003',
       lga: 'Ikeja',
       state: 'Lagos',
-      status: 'PENDING' as const,
-      votes: 0,
-      accredited: 0,
     },
-  ];
+  ], []);
 
-  const activePus = user?.role === 'POLLING_AGENT' ? assignedDemoPus.slice(0, 1) : assignedDemoPus;
+  // Derive dynamic status, vote counts, and matching draft from store results (SSOT)
+  const assignedPus = React.useMemo(() => {
+    return baseAssignedPus.map((pu) => {
+      const matching = results.find(
+        (r) =>
+          r.pollingUnitId === pu.id ||
+          r.pollingUnitName.toLowerCase().includes(pu.code.toLowerCase()) ||
+          r.pollingUnitName.toLowerCase().includes(pu.name.toLowerCase())
+      );
+
+      if (matching) {
+        return {
+          ...pu,
+          status: matching.status,
+          votes: matching.totalVotesCast,
+          accredited: matching.totalAccreditedVoters,
+          result: matching,
+        };
+      }
+
+      return {
+        ...pu,
+        status: 'PENDING' as const,
+        votes: 0,
+        accredited: 0,
+        result: undefined,
+      };
+    });
+  }, [baseAssignedPus, results]);
+
+  const activePus =
+    user?.role === 'POLLING_AGENT'
+      ? assignedPus.filter((p) => user?.assignedLocations?.includes(p.id)).length > 0
+        ? assignedPus.filter((p) => user?.assignedLocations?.includes(p.id))
+        : assignedPus.slice(2, 3) // Stations PU Agent at PU 003 (draft)
+      : assignedPus;
 
   // Search autocomplete
   const searchResults = locationSearchQuery ? electionService.searchLocations(locationSearchQuery) : [];
@@ -277,7 +304,7 @@ export const DashboardView: React.FC = () => {
       ) : (
         /* Field Agent / Polling Agent Station Console Header */
         <div className="w-full rounded-xl border border-[#1C2E24] bg-[#0D6338]/[0.05] p-3 sm:p-3.5 lg:p-4 shadow-md backdrop-blur-sm">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-start gap-3 sm:gap-6 lg:gap-8 flex-wrap sm:flex-nowrap">
             <div className="flex items-center justify-between sm:justify-start gap-3">
               <div>
                 <div className="flex items-center gap-1.5">
@@ -347,25 +374,57 @@ export const DashboardView: React.FC = () => {
       {/* 2b. Drafts Alert Banner (Only for Field & Polling Agents) */}
       {isFieldUser && draftSubmissions.length > 0 && (
         <div
-          onClick={() => setDraftsQueueOpen(true)}
-          className="cursor-pointer rounded-2xl border border-amber-500/50 bg-amber-950/30 p-4 shadow-md hover:bg-amber-950/40 transition flex items-center justify-between gap-3"
+          onClick={() => {
+            if (draftSubmissions.length === 1) {
+              setEditingDraftResult(draftSubmissions[0]);
+              setSubmitResultOpen(true);
+            } else {
+              setDraftsQueueOpen(true);
+            }
+          }}
+          className="cursor-pointer rounded-2xl border border-amber-500/50 bg-amber-950/30 p-3.5 sm:p-4 shadow-md hover:bg-amber-950/40 transition flex flex-col sm:flex-row sm:items-center justify-between gap-3"
         >
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-amber-500/20 flex items-center justify-center text-amber-400 flex-shrink-0">
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-amber-500/20 flex items-center justify-center text-amber-400 flex-shrink-0">
               <FileText className="w-5 h-5" />
             </div>
             <div>
-              <p className="text-sm font-bold text-white">
-                {draftSubmissions.length} Pending Result Draft{draftSubmissions.length > 1 ? 's' : ''}
+              <p className="text-sm font-bold text-white flex items-center gap-2">
+                <span>{draftSubmissions.length} Pending Result Draft{draftSubmissions.length > 1 ? 's' : ''}</span>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                  ACTION REQUIRED
+                </span>
               </p>
               <p className="text-xs text-[#94A89D]">
-                You have saved drafts awaiting review and final publication.
+                {draftSubmissions.length === 1
+                  ? `${draftSubmissions[0].pollingUnitName} — Saved offline. Click to resume editing or publish.`
+                  : 'You have saved drafts awaiting review and final publication.'}
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-500 text-black font-bold text-xs flex-shrink-0">
-            <span>Resume</span>
-            <ChevronRight className="w-3.5 h-3.5" />
+          <div className="flex items-center gap-2 flex-shrink-0 self-end sm:self-auto">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setEditingDraftResult(draftSubmissions[0]);
+                setSubmitResultOpen(true);
+              }}
+              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-black font-bold text-xs transition shadow-sm"
+            >
+              <span>Resume Editing</span>
+              <ChevronRight className="w-3.5 h-3.5" />
+            </button>
+            {draftSubmissions.length > 1 && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setDraftsQueueOpen(true);
+                }}
+                className="px-3 py-1.5 rounded-xl bg-[#121F18] border border-[#1C2E24] text-[#94A89D] hover:text-white font-bold text-xs transition"
+              >
+                Queue ({draftSubmissions.length})
+              </button>
+            )}
           </div>
         </div>
       )}
@@ -749,7 +808,11 @@ export const DashboardView: React.FC = () => {
                           Turnout
                         </span>
                         <span className="text-xs font-bold text-emerald-400 font-mono">
-                          {pu.accredited > 0 ? `${((pu.votes / pu.accredited) * 100).toFixed(1)}%` : '0%'}
+                          {isDraft
+                            ? `${pu.votes} Cast`
+                            : pu.accredited > 0
+                            ? `${((pu.votes / pu.accredited) * 100).toFixed(1)}%`
+                            : '0%'}
                         </span>
                       </div>
                       <div className="border-x border-[#1C2E24]">
@@ -762,10 +825,10 @@ export const DashboardView: React.FC = () => {
                       </div>
                       <div>
                         <span className="text-[9px] uppercase tracking-wider text-[#718579] font-bold block">
-                          BVAS Status
+                          Status
                         </span>
-                        <span className="text-xs font-bold text-emerald-400">
-                          Verified
+                        <span className={`text-xs font-bold ${isDraft ? 'text-amber-400' : isPub ? 'text-emerald-400' : 'text-zinc-400'}`}>
+                          {isDraft ? 'Offline Draft' : isPub ? 'Transmitted' : 'Pending'}
                         </span>
                       </div>
                     </div>
@@ -776,28 +839,29 @@ export const DashboardView: React.FC = () => {
                       {isPub
                         ? `${pu.votes} Votes tallied (${pu.accredited} accredited)`
                         : isDraft
-                        ? 'Draft saved in local store'
+                        ? `Draft: ${pu.votes} votes tallied (${pu.accredited} accredited)`
                         : 'Awaiting accredited ballot entry'}
                     </span>
 
                     <button
                       onClick={() => {
                         if (isSupervisory || isPub) {
-                          const matching = results.find(
-                            (r) =>
-                              r.pollingUnitId === pu.id ||
-                              r.pollingUnitName.toLowerCase().includes(pu.code.toLowerCase()) ||
-                              r.pollingUnitName.toLowerCase().includes(pu.name.toLowerCase())
-                          );
-                          if (matching) {
-                            setSelectedResultId(matching.id);
+                          if (pu.result) {
+                            setSelectedResultId(pu.result.id);
                           } else {
                             setSelectedPuFilter(pu.name);
                           }
                           setActiveTab('results');
                         } else if (isDraft) {
-                          setDraftsQueueOpen(true);
+                          const draftToEdit = pu.result || draftSubmissions[0];
+                          if (draftToEdit) {
+                            setEditingDraftResult(draftToEdit);
+                            setSubmitResultOpen(true);
+                          } else {
+                            setDraftsQueueOpen(true);
+                          }
                         } else {
+                          setEditingDraftResult(null);
                           setSubmitResultOpen(true);
                         }
                       }}

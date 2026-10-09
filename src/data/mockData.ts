@@ -587,7 +587,7 @@ export const INITIAL_RESULTS: ResultSubmission[] = [
     submittedAt: '2027-02-25T14:30:00Z',
     submittedBy: 'agent.ibrahim@yiaga.org',
     evidencePhotoUrl: 'https://images.unsplash.com/photo-1540910419892-4a36d2c3266c?q=80&w=800',
-    note: 'Form EC8A certified by PU Presiding Officer with INEC stamp.',
+    note: 'Form EC8A photographed and documented on-site by parallel observer.',
   },
   {
     id: 'r2',

@@ -18,6 +18,7 @@ interface SubmitResultContentProps {
   defaultPuId: string;
   userEmail?: string;
   assignedLocations?: string[];
+  initialDraft?: ResultSubmission | null;
 }
 
 const SubmitResultContent: React.FC<SubmitResultContentProps> = ({
@@ -26,6 +27,7 @@ const SubmitResultContent: React.FC<SubmitResultContentProps> = ({
   defaultPuId,
   userEmail,
   assignedLocations,
+  initialDraft,
 }) => {
   useModalA11y({ isOpen: true, onClose });
 
@@ -33,18 +35,30 @@ const SubmitResultContent: React.FC<SubmitResultContentProps> = ({
   const allPollingUnits = electionService.getPollingUnits();
 
   const [selectedPuId, setSelectedPuId] = useState(
-    defaultPuId || allPollingUnits[0]?.id || ''
+    initialDraft?.pollingUnitId || defaultPuId || allPollingUnits[0]?.id || ''
   );
-  const [accreditedVoters, setAccreditedVoters] = useState<number>(650);
-  const [rejectedVotes, setRejectedVotes] = useState<number>(8);
-  const [votes, setVotes] = useState<Record<string, number>>({
-    cand1: 260,
-    cand2: 195,
-    cand3: 140,
-    cand4: 42,
-  });
-  const [photoAttached, setPhotoAttached] = useState<boolean>(true);
-  const [note, setNote] = useState<string>('Form EC8A verified and stamped.');
+  const [accreditedVoters, setAccreditedVoters] = useState<number>(
+    initialDraft?.totalAccreditedVoters ?? 650
+  );
+  const [rejectedVotes, setRejectedVotes] = useState<number>(
+    initialDraft?.rejectedVotes ?? 8
+  );
+  const [votes, setVotes] = useState<Record<string, number>>(
+    initialDraft?.candidateVotes
+      ? { ...initialDraft.candidateVotes }
+      : {
+          cand1: 260,
+          cand2: 195,
+          cand3: 140,
+          cand4: 42,
+        }
+  );
+  const [photoAttached, setPhotoAttached] = useState<boolean>(
+    initialDraft ? !!initialDraft.evidencePhotoUrl : true
+  );
+  const [note, setNote] = useState<string>(
+    initialDraft?.note || 'Form EC8A documented and verified on-site by parallel observer.'
+  );
   const [validationError, setValidationError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -77,7 +91,7 @@ const SubmitResultContent: React.FC<SubmitResultContentProps> = ({
     setIsSubmitting(true);
 
     const newResult: ResultSubmission = {
-      id: `r-${Date.now()}`,
+      id: initialDraft?.id || `r-${Date.now()}`,
       electionId: 'e1',
       pollingUnitId: selectedPu.id,
       pollingUnitName: selectedPu.name,
@@ -97,7 +111,7 @@ const SubmitResultContent: React.FC<SubmitResultContentProps> = ({
       status: isDraft ? 'DRAFT' : 'PUBLISHED',
       latitude: selectedPu.latitude || 6.55,
       longitude: selectedPu.longitude || 3.35,
-      submittedAt: new Date().toISOString(),
+      submittedAt: initialDraft?.submittedAt || new Date().toISOString(),
       submittedBy: userEmail || 'observer@iaquila.com.ng',
       evidencePhotoUrl: photoAttached
         ? 'https://images.unsplash.com/photo-1540910419892-4a36d2c3266c?q=80&w=800'
@@ -125,10 +139,12 @@ const SubmitResultContent: React.FC<SubmitResultContentProps> = ({
             </div>
             <div>
               <h2 className="text-base font-extrabold text-white">
-                Submit Polling Unit Result (Form EC8A)
+                {initialDraft ? 'Edit Form EC8A Result Draft' : 'Record Polling Unit Result (Form EC8A)'}
               </h2>
               <p className="text-xs text-[#718579]">
-                Accredited Observer Parallel Vote Tabulation Entry
+                {initialDraft
+                  ? 'Update offline draft tallies, voter accreditation, and parallel observations'
+                  : 'Independent Observer Parallel Vote Tabulation Entry'}
               </p>
             </div>
           </div>
@@ -209,7 +225,7 @@ const SubmitResultContent: React.FC<SubmitResultContentProps> = ({
           <div className="space-y-3 pt-2 border-t border-[#1C2E24]">
             <div className="flex items-center justify-between">
               <label className="text-xs font-bold text-white uppercase tracking-wider">
-                Certified Candidate Votes Cast
+                Recorded Candidate Votes Cast
               </label>
               <span className="text-xs font-mono text-[#718579]">
                 Valid: <strong className="text-white">{candidateVotesSum}</strong> | Total Cast:{' '}
@@ -369,7 +385,7 @@ const SubmitResultContent: React.FC<SubmitResultContentProps> = ({
             className="w-full sm:w-auto px-4 py-2 rounded-xl bg-[#15241D] hover:bg-[#1C2E24] text-amber-300 border border-amber-500/30 text-xs font-bold transition flex items-center justify-center gap-1.5 disabled:opacity-50"
           >
             {isSubmitting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
-            <span>Save as Draft Queue</span>
+            <span>{isSubmitting ? 'Saving...' : initialDraft ? 'Save Updated Draft' : 'Save as Draft Queue'}</span>
           </button>
           <button
             onClick={() => handleSave(false)}
@@ -377,7 +393,7 @@ const SubmitResultContent: React.FC<SubmitResultContentProps> = ({
             className="w-full sm:w-auto px-5 py-2 rounded-xl bg-gradient-to-r from-[#0D6338] to-[#10B981] hover:from-[#15803D] hover:to-[#34D399] text-white text-xs font-bold transition shadow-md shadow-emerald-950/50 flex items-center justify-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isSubmitting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
-            <span>Publish Live Result</span>
+            <span>{isSubmitting ? 'Publishing...' : 'Publish Live Result'}</span>
           </button>
         </div>
       </div>
@@ -390,19 +406,33 @@ export const SubmitResultModal: React.FC = () => {
     isSubmitResultOpen,
     setSubmitResultOpen,
     addResult,
+    updateResult,
     user,
     setDraftsQueueOpen,
+    editingDraftResult,
+    setEditingDraftResult,
   } = useAppStore();
 
   if (!isSubmitResultOpen) return null;
 
   const defaultPuId =
+    editingDraftResult?.pollingUnitId ||
     user?.selectedPollingUnitId ||
     user?.assignedLocations?.[0] ||
     '';
 
+  const handleClose = () => {
+    setEditingDraftResult(null);
+    setSubmitResultOpen(false);
+  };
+
   const handleSaveResult = (newResult: ResultSubmission, isDraft: boolean) => {
-    addResult(newResult);
+    if (editingDraftResult) {
+      updateResult(editingDraftResult.id, newResult);
+    } else {
+      addResult(newResult);
+    }
+    setEditingDraftResult(null);
     setSubmitResultOpen(false);
     if (isDraft) {
       setDraftsQueueOpen(true);
@@ -411,11 +441,12 @@ export const SubmitResultModal: React.FC = () => {
 
   return (
     <SubmitResultContent
-      onClose={() => setSubmitResultOpen(false)}
+      onClose={handleClose}
       onSaveResult={handleSaveResult}
       defaultPuId={defaultPuId}
       userEmail={user?.email}
       assignedLocations={user?.assignedLocations}
+      initialDraft={editingDraftResult}
     />
   );
 };

@@ -8,6 +8,7 @@ import {
   UploadCloud,
   Trash2,
   CheckCircle2,
+  Edit3,
 } from 'lucide-react';
 
 export const DraftsQueueModal: React.FC = () => {
@@ -17,6 +18,8 @@ export const DraftsQueueModal: React.FC = () => {
     results,
     publishDraft,
     deleteResult,
+    setEditingDraftResult,
+    setSubmitResultOpen,
   } = useAppStore();
 
   useModalA11y({
@@ -133,6 +136,17 @@ export const DraftsQueueModal: React.FC = () => {
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                       <span>Discard</span>
+                    </button>
+                    <button
+                      onClick={() => {
+                        setEditingDraftResult(draft);
+                        setDraftsQueueOpen(false);
+                        setSubmitResultOpen(true);
+                      }}
+                      className="px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-[#15241D] hover:bg-[#1C2E24] text-amber-300 border border-amber-500/30 transition flex items-center gap-1.5"
+                    >
+                      <Edit3 className="w-3.5 h-3.5" />
+                      <span>Edit Draft</span>
                     </button>
                     <button
                       onClick={() => publishDraft(draft.id)}

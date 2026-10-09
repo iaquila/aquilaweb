@@ -46,7 +46,7 @@ export const ResultDetailModal: React.FC = () => {
                 Polling Unit Audit Detail
               </h2>
               <p className="text-xs text-[#718579]">
-                Certified Form EC8A Parallel Tabulation Record
+                Form EC8A Parallel Tabulation Record
               </p>
             </div>
           </div>
@@ -82,7 +82,7 @@ export const ResultDetailModal: React.FC = () => {
               </p>
               <p className="flex items-center gap-1">
                 <User className="w-3.5 h-3.5 text-emerald-400" />
-                Certified by Observer: {result.submittedBy}
+                Documented by Observer: {result.submittedBy}
               </p>
               <p className="flex items-center gap-1">
                 <Calendar className="w-3.5 h-3.5 text-emerald-400" />
@@ -119,10 +119,10 @@ export const ResultDetailModal: React.FC = () => {
             </div>
           </div>
 
-          {/* Side-by-side Candidate Tally Comparison (Field vs INEC) */}
+          {/* Side-by-side Candidate Tally Comparison (Field vs Official) */}
           <div className="space-y-2">
             <h4 className="text-xs font-bold text-white uppercase tracking-wider">
-              Field Observer vs. INEC Official Returns
+              Field Observer vs. Official Tally
             </h4>
 
             <div className="space-y-2">
@@ -159,7 +159,7 @@ export const ResultDetailModal: React.FC = () => {
                         <span className="text-white font-bold">{fieldVal} ({pct}%)</span>
                       </div>
                       <div>
-                        <span className="text-[10px] text-[#718579] block">INEC</span>
+                        <span className="text-[10px] text-[#718579] block">Official</span>
                         <span className="text-[#94A89D]">{inecVal}</span>
                       </div>
                       <div>
@@ -197,7 +197,7 @@ export const ResultDetailModal: React.FC = () => {
                 />
                 <div className="absolute bottom-2 left-2 px-2.5 py-1 rounded-lg bg-black/80 backdrop-blur text-[10px] text-emerald-400 font-mono flex items-center gap-1.5">
                   <ShieldCheck className="w-3.5 h-3.5" />
-                  <span>Hash verified • Stamp Authenticated</span>
+                  <span>Hash verified • Cryptographically Signed</span>
                 </div>
               </div>
             </div>

@@ -166,7 +166,7 @@ export const LocationsView: React.FC = () => {
                 Polling Units in {selectedLga?.name || 'Selected LGA'}
               </h2>
               <p className="text-xs text-[#718579]">
-                Certified INEC polling stations for primary voter accreditation &amp; counting
+                Registered polling stations for primary voter accreditation &amp; counting
               </p>
             </div>
             <span className="text-xs font-mono font-bold text-emerald-400 bg-[#15241D] px-2.5 py-1 rounded-lg border border-[#1C2E24]">

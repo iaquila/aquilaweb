@@ -93,16 +93,20 @@
       * Balanced column heights across two-column views (e.g. `ElectionsView`: 389px/803px @ 774px height; `LocationsView`: 389px/803px @ 522px height).
       * Debounced navigation transitions firing reliably with 0 layout jitter.
 
+  * SSOT Dynamic PU Derivation & Draft Editing Workflow:
+    - Dynamic Assigned PUs (SSOT): Replaced hardcoded static `assignedDemoPus` array in `DashboardView.tsx` with dynamic `useMemo` resolving status, votes cast, and accredited counts directly from `results` in `src/store/index.ts`.
+    - Real-Time Draft Editing: Added `editingDraftResult` state and `setEditingDraftResult` action in `src/store/index.ts`. Wired "Resume Editing" on the Pending Draft banner, "Resume" on draft PU cards, and "Edit Draft" in `DraftsQueueModal.tsx` directly to `SubmitResultModal.tsx`, prefilling existing tallies and updating records in place via `updateResult()`.
+    - Independent Situation Room Terminology Alignment: Removed all "Certified by INEC", "INEC stamp", and "Stamp Authenticated" references across `mockData.ts`, `ResultDetailModal.tsx`, `SubmitResultModal.tsx`, `LocationsView.tsx`, and `ResultsView.tsx`, aligning strictly with independent citizen observer parallel vote tabulation (PVT) protocols ("Cryptographically Signed", "Documented on-site by parallel observer").
+    - Section Body Width Compaction: Compacted Field Agent station console header (`sm:justify-start gap-4 sm:gap-6 lg:gap-8`) and transformed the 1 Pending Result Draft banner into a responsive, balanced alert card with explicit PU identification and direct "Resume Editing" action.
+
 ## Verification Status
 Staff Invariant Audit: INVARIANTS VERIFIED
 - `npm run lint` (`eslint .`): Exited with code 0 (0 errors, 0 warnings).
 - `tsc --noEmit`: Exited with code 0 (0 type errors).
-- `vite build`: Clean production bundle built in 6.00s.
-- Section Heights & Balances (DevTools DOM inspection):
-  * Field/PU Candidate Snapshot: Compacted from 492px → 152px (-340px scroll overhead).
-  * Field Agent Two-Column Grid: Left col 479px vs Right col 546px (balanced).
-  * Polling Unit Agent Two-Column Grid: Left col 289px vs Right col 546px (balanced with operational scorecard).
-  * Elections Grid: Left col 774px vs Right col 774px (perfect 1:1 balance).
-  * Locations Grid: Left col 522px vs Right col 522px (perfect 1:1 balance).
-- Multi-viewport & Multi-Tab DOM verification: 0 horizontal overflow (`scrollWidth === clientWidth`) across all 7 views.
+- `vite build`: Clean production bundle built in 5.86s.
+- End-to-End Live DOM Verification:
+  * Alert Banner displays actual draft unit (`PU 003 - Allen Avenue Junction Hall`).
+  * "Resume Editing" opens modal prefilled with draft figures (Votes: 275, 198, 142, 25; Accredited: 650).
+  * Publishing live immediately updates PU 003 card from `DRAFT` → `PUBLISHED` (648 / 650) and dismisses the alert banner dynamically.
+- Terminology Audit: 0 "certified/stamped by INEC" occurrences remaining.
 
