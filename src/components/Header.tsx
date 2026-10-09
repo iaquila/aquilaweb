@@ -43,19 +43,19 @@ export const Header: React.FC = () => {
       : 'Polling Unit Agent';
 
   return (
-    <header className="sticky top-0 z-40 bg-[#070C09]/95 backdrop-blur-md border-b border-[#1C2E24] px-4 lg:px-8 py-3">
-      <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
+    <header className="sticky top-0 z-40 bg-[#070C09]/95 backdrop-blur-md border-b border-[#1C2E24] px-3 sm:px-4 lg:px-8 py-2 sm:py-3">
+      <div className="max-w-7xl mx-auto flex items-center justify-between gap-2 sm:gap-4">
         {/* Logo and Brand */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
           <div
             onClick={() => setActiveTab('dashboard')}
-            className="flex items-center gap-2.5 cursor-pointer group"
+            className="flex items-center gap-2 sm:gap-2.5 cursor-pointer group"
           >
-            <div className="relative w-9 h-9 rounded-xl bg-gradient-to-br from-[#0D6338] to-[#10B981] p-1 shadow-lg shadow-emerald-950/50 flex items-center justify-center overflow-hidden">
+            <div className="relative w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-gradient-to-br from-[#0D6338] to-[#10B981] p-1 shadow-lg shadow-emerald-950/50 flex items-center justify-center overflow-hidden shrink-0">
               <img
                 src="/assets/eagle-head.png"
                 alt="iAquila"
-                className="w-7 h-7 object-contain drop-shadow"
+                className="w-6 h-6 sm:w-7 sm:h-7 object-contain drop-shadow"
                 onError={(e) => {
                   (e.target as HTMLElement).style.display = 'none';
                 }}
@@ -63,10 +63,10 @@ export const Header: React.FC = () => {
             </div>
             <div>
               <div className="flex items-center gap-1.5">
-                <span className="font-extrabold text-lg tracking-wider text-white">iAQUILA</span>
+                <span className="font-extrabold text-base sm:text-lg tracking-wider text-white">iAQUILA</span>
                 <span
                   title="iAquila Real-time Election Intelligence Platform"
-                  className="text-[10px] uppercase font-bold tracking-widest px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
+                  className="text-[10px] uppercase font-bold tracking-widest px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 hidden sm:inline-block"
                 >
                   2027 ELECTION
                 </span>
@@ -95,7 +95,7 @@ export const Header: React.FC = () => {
         </div>
 
         {/* Action Controls & User Account Switcher */}
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-1.5 sm:gap-2.5">
           {/* Field Agent Actions (Submit Result, Report Incident, Drafts Queue) - Only for Polling Unit & Field Agents per PRD Pages 13-16 */}
           {isFieldAgent && (
             <>
@@ -103,11 +103,13 @@ export const Header: React.FC = () => {
               {draftsCount > 0 && (
                 <button
                   onClick={() => setDraftsQueueOpen(true)}
-                  className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 text-xs font-semibold transition"
+                  title="Drafts Queue"
+                  aria-label="Drafts Queue"
+                  className="flex items-center gap-1 px-1.5 sm:px-2.5 py-1.5 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 text-xs font-semibold transition shrink-0"
                 >
                   <FileText className="w-3.5 h-3.5" />
-                  <span className="hidden sm:inline">Drafts Queue</span>
-                  <span className="w-5 h-5 rounded-full bg-amber-500 text-black text-[11px] font-bold flex items-center justify-center">
+                  <span className="hidden md:inline">Drafts</span>
+                  <span className="w-4 h-4 sm:w-5 sm:h-5 rounded-full bg-amber-500 text-black text-[10px] sm:text-[11px] font-bold flex items-center justify-center">
                     {draftsCount}
                   </span>
                 </button>
@@ -116,21 +118,23 @@ export const Header: React.FC = () => {
               {/* Submit Result CTA */}
               <button
                 onClick={() => setSubmitResultOpen(true)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#0D6338] hover:bg-[#15803D] text-white text-xs font-semibold transition shadow-sm"
+                title="Submit Result"
+                aria-label="Submit Result"
+                className="flex items-center gap-1.5 p-1.5 sm:px-3 sm:py-1.5 rounded-lg bg-[#0D6338] hover:bg-[#15803D] text-white text-xs font-semibold transition shadow-sm shrink-0"
               >
                 <FileText className="w-3.5 h-3.5" />
                 <span className="hidden sm:inline">Submit Result</span>
-                <span className="sm:hidden">Submit</span>
               </button>
 
               {/* Report Incident CTA */}
               <button
                 onClick={() => setReportIncidentOpen(true)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-950/80 hover:bg-red-900/80 text-red-200 border border-red-800/50 text-xs font-semibold transition"
+                title="Report Incident"
+                aria-label="Report Incident"
+                className="flex items-center gap-1.5 p-1.5 sm:px-3 sm:py-1.5 rounded-lg bg-red-950/80 hover:bg-red-900/80 text-red-200 border border-red-800/50 text-xs font-semibold transition shrink-0"
               >
                 <AlertTriangle className="w-3.5 h-3.5 text-red-400" />
                 <span className="hidden sm:inline">Report Incident</span>
-                <span className="sm:hidden">Incident</span>
               </button>
             </>
           )}
@@ -144,12 +148,12 @@ export const Header: React.FC = () => {
           )}
 
           {/* Role & Org Switcher Menu */}
-          <div className="relative">
+          <div className="relative shrink-0">
             <button
               onClick={() => setRoleMenuOpen(!roleMenuOpen)}
-              className="flex items-center gap-2 px-2.5 py-1.5 rounded-xl bg-[#0E1712] hover:bg-[#15241D] border border-[#1C2E24] transition text-left"
+              className="flex items-center gap-1 sm:gap-2 p-1 sm:px-2.5 sm:py-1.5 rounded-xl bg-[#0E1712] hover:bg-[#15241D] border border-[#1C2E24] transition text-left"
             >
-              <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-[#10B981]/30 to-[#0D6338]/30 flex items-center justify-center text-xs font-bold text-emerald-300">
+              <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-gradient-to-br from-[#10B981]/30 to-[#0D6338]/30 flex items-center justify-center text-[10px] sm:text-xs font-bold text-emerald-300">
                 {user?.name?.slice(0, 2).toUpperCase() || 'AQ'}
               </div>
               <div className="hidden lg:block">
@@ -165,12 +169,12 @@ export const Header: React.FC = () => {
               >
                 {roleLabel}
               </span>
-              <ChevronDown className="w-3.5 h-3.5 text-[#718579]" />
+              <ChevronDown className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-[#718579] hidden xs:block sm:block" />
             </button>
 
             {/* Switch Account Dropdown */}
             {roleMenuOpen && (
-              <div className="absolute right-0 mt-2 w-80 rounded-2xl bg-[#0E1712] border border-[#1C2E24] shadow-2xl p-2 z-50 animate-in fade-in slide-in-from-top-2">
+              <div className="absolute right-0 mt-2 w-[min(20rem,calc(100vw-2rem))] max-w-[calc(100vw-2rem)] rounded-2xl bg-[#0E1712] border border-[#1C2E24] shadow-2xl p-2 z-50 animate-in fade-in slide-in-from-top-2">
                 <div className="px-3 py-2 border-b border-[#1C2E24]">
                   <p className="text-xs font-bold text-white uppercase tracking-wider">
                     Observer Identity

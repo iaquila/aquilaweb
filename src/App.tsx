@@ -38,7 +38,7 @@ export const AppContent: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-[#070C09] text-[#F1F7F3] flex flex-col font-sans selection:bg-[#10B981] selection:text-black">
+    <div className="min-h-screen bg-[#070C09] text-[#F1F7F3] flex flex-col font-sans selection:bg-[#10B981] selection:text-black overflow-x-clip">
       {/* Top Header */}
       <Header />
 
@@ -46,7 +46,7 @@ export const AppContent: React.FC = () => {
       <Navigation />
 
       {/* Viewport Content */}
-      <main className="flex-1 max-w-[1536px] w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <main className="flex-1 max-w-[1536px] w-full min-w-0 mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {activeTab === 'dashboard' && <DashboardView />}
         {activeTab === 'elections' && <ElectionsView />}
         {activeTab === 'results' && <ResultsView />}

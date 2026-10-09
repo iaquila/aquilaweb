@@ -52,8 +52,11 @@
   * Public Directory Restoration (Without Landing or Duplicate HTML): Restored `public/` directory containing `.htaccess` (with 301 redirect rules to `https://iaquila.com.ng` where cPanel's `public_html` serves the canonical documents, plus LiteSpeed SPA rewrite rules and caching) and authentic brand assets in `public/assets/`, keeping legacy `landing/` and redundant HTML copies removed.
   * CI/CD Modernization: Upgraded GitHub Actions (`actions/checkout@v7`, `actions/setup-node@v7`, `actions/upload-pages-artifact@v5`, `actions/deploy-pages@v5`, `SamKirkland/FTP-Deploy-Action@v4.4.0`) across `.github/workflows/{ci,deploy,deploy-cpanel}.yml` to target Node 24 natively, completely eliminating deprecated Node 20 runner warnings.
 
+  * Mobile Viewport Horizontal Scroll Elimination: Diagnosed DOM layout on mobile viewports (<580px down to 320px). Identified `Header.tsx` as sole root cause expanding `scrollWidth` from 360px to 579px due to uncollapsed inline CTA buttons ("Submit", "Incident", "Drafts Queue") and the "2027 ELECTION" badge. Refined Header to compact icon-only CTA buttons on `<sm` screens, tuned paddings, added `w-[min(20rem,calc(100vw-2rem))]` to role switcher dropdown, added `min-w-0` to `<main>`, and applied `overflow-x: clip` on `html, body`. DOM verification across all 7 views confirmed `scrollWidth: 320/360px` matching `clientWidth: 320/360px` with 0 horizontal scroll.
+
 ## Verification Status
 Staff Invariant Audit: INVARIANTS VERIFIED
 - `tsc --noEmit`: Exited with code 0.
 - `vite build`: Clean production bundle built successfully (dist includes `.htaccess` with 301 legal redirects, and brand eagle head assets).
 - Curl verification: All legal endpoints on `https://iaquila.com.ng` verified HTTP 200.
+- Chrome DevTools Mobile Viewport Audit: Verified 0 horizontal overflow across 320px, 360px, 375px, 390px, and 412px viewports.
