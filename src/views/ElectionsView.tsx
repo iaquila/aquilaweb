@@ -7,6 +7,7 @@ import {
   Award,
   Star,
 } from 'lucide-react';
+import { Card } from '../components/Card';
 
 export const ElectionsView: React.FC = () => {
   const {
@@ -74,7 +75,7 @@ export const ElectionsView: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Left Column: Contests in this cycle */}
         <div className="lg:col-span-4 space-y-3">
-          <div className="bg-[#0E1712] border border-[#1C2E24] rounded-3xl p-4 shadow-xl">
+          <Card className="p-4 shadow-xl">
             <h2 className="text-xs font-bold text-[#718579] uppercase tracking-wider px-2 mb-3">
               Ballot Positions ({elections.length})
             </h2>
@@ -124,13 +125,13 @@ export const ElectionsView: React.FC = () => {
                 );
               })}
             </div>
-          </div>
+          </Card>
         </div>
 
         {/* Right Column: Active Election Overview & Candidate Party Histories */}
         <div className="lg:col-span-8 space-y-6">
           {activeElection && (
-            <div className="bg-[#0E1712] border border-[#1C2E24] rounded-3xl p-6 shadow-xl space-y-6">
+            <Card className="p-6 shadow-xl space-y-6">
               {/* Header */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-5 border-b border-[#1C2E24]">
                 <div>
@@ -297,7 +298,7 @@ export const ElectionsView: React.FC = () => {
                   </div>
                 </div>
               )}
-            </div>
+            </Card>
           )}
         </div>
       </div>

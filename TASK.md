@@ -72,12 +72,26 @@
     - Debounced tab navigation in `Navigation.tsx` and modal triggers (Submit Result, Report Incident, Drafts Queue, Brand Home) in `Header.tsx`.
   * Container Primitive Standardization:
     - Created reusable `<Card>` primitive (`default`, `highlighted`, `elevated`, `subtle`) matching the design system and refactored container sections.
-  * Multi-Viewport DOM & Interaction Audit:
-    - Verified responsive layout and 0 horizontal overflow across Mobile (360px, 375px), Tablet (768px), and Desktop (1280px, 1440px).
-    - Verified candidate selection linking between top header cards and the AI projection engine.
+  * Layout Compaction & Dead Space Elimination:
+    - Election Officer Station Console Header: Transitioned header flex-row trigger from `2xl:flex-row` (which never triggered inside `max-w-7xl`) to `xl:flex-row`. Candidate Snapshot Performance cards now merge into a single horizontal telemetry row with the station status on desktop displays, eliminating vertical dead space.
+    - Quick Actions Grid Compaction: Refactored bulky vertical 2x2 cards into sleek, ergonomic horizontal action buttons with compact left-aligned icon badges and single-line typography. Reduced height by ~50% (from 240px to 126px), balancing the vertical height of the right column with the `Assigned Polling Units` list on the left.
+    - Field Agent Header Symmetry: Converted `w-fit` header container to `w-full` with balanced horizontal telemetry alignment across desktop and mobile, eliminating the empty void on the right of the header.
+
+  * Gold-Standard UX & Architectural Anti-Pattern Resolution:
+    - Modal Accessibility & Body Scroll Lock (`useModalA11y`): Created reusable hook managing `document.body.style.overflow = 'hidden'` on mount (restoring on unmount) and listening for `Escape` key dismissal. Implemented backdrop click-to-close with `e.stopPropagation()` on dialog cards across all 5 modals (`SubmitResultModal`, `ReportIncidentModal`, `DraftsQueueModal`, `ResultDetailModal`, `IncidentDetailModal`).
+    - Form EC8A Real-Time Telemetry Meter & Mutation Guard: Added live Accreditation Balance Tally Meter and dynamic progress bar in `SubmitResultModal.tsx` comparing total recorded votes against accredited voters (remaining, balanced, exceeded states). Added double-submission cooldown guards (`isSubmitting`) with `<Loader2>` spinning indicators across result submissions and incident reports.
+    - Navigation Intent Handoff: Added consumable PU filter pattern (`selectedPuFilter`, `setSelectedPuFilter`, `consumePuFilter`) in `src/store/index.ts`. Clicking "Audit" or "View" on assigned polling units in `DashboardView.tsx` directly opens the Form EC8A audit modal if result exists, or navigates to `ResultsView.tsx` with the filter pre-applied and atomically consumed.
+    - Component Primitive SSOT: Replaced ad-hoc raw border/bg divs with centralized `<Card>` primitives across all secondary views (`ResultsView.tsx`, `IncidentsView.tsx`, `PartiesView.tsx`, `ElectionsView.tsx`, `LocationsView.tsx`).
 
 ## Verification Status
 Staff Invariant Audit: INVARIANTS VERIFIED
-- `tsc --noEmit`: Exited with code 0.
-- `vite build`: Clean production bundle built successfully.
+- `tsc --noEmit`: Exited with code 0 (clean, 0 type errors).
+- `vite build`: Clean production bundle built successfully in 6.28s.
 - Multi-viewport DOM verification: 0 horizontal overflow (`scrollWidth === clientWidth`) across 360px, 375px, 768px, and 1440px displays.
+- Modal & Interaction Verification: Verified via DevTools on port 3002:
+  * Modal open locks `bodyOverflow: "hidden"`.
+  * Real-time tally meter dynamically tracks remaining ballots (`645 / 650`).
+  * `Escape` key dismisses modal and restores `bodyOverflow: ""`.
+  * Backdrop click dismisses modal and restores `bodyOverflow: ""`.
+- Visual Ergonomics: Header height reduced to 104px single row on desktop; Quick Actions reduced to 126px; 0 dead voids across viewports.
+

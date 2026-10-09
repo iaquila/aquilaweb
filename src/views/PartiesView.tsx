@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { electionService } from '../services/electionService';
 import { PARTY_COLORS } from '../constants';
+import { Card } from '../components/Card';
 
 export const PartiesView: React.FC = () => {
   const parties = electionService.getParties();
@@ -49,9 +50,9 @@ export const PartiesView: React.FC = () => {
             const pColor = PARTY_COLORS[cand.partyAcronym] || '#10B981';
 
             return (
-              <div
+              <Card
                 key={cand.id}
-                className="bg-[#0E1712] border border-[#1C2E24] rounded-2xl p-5 shadow-lg space-y-4"
+                className="p-5 shadow-lg space-y-4"
               >
                 {/* Header row */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#1C2E24]">
@@ -115,16 +116,16 @@ export const PartiesView: React.FC = () => {
                     )}
                   </div>
                 </div>
-              </div>
+              </Card>
             );
           })}
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {parties.map((party) => (
-            <div
+            <Card
               key={party.id}
-              className="bg-[#0E1712] border border-[#1C2E24] rounded-2xl p-5 shadow-xl hover:border-emerald-500/40 transition flex flex-col justify-between space-y-4"
+              className="p-5 shadow-xl hover:border-emerald-500/40 transition flex flex-col justify-between space-y-4"
             >
               <div>
                 <div className="flex items-start justify-between pb-3 border-b border-[#1C2E24]">
@@ -166,7 +167,7 @@ export const PartiesView: React.FC = () => {
                   </div>
                 </div>
               </div>
-            </div>
+            </Card>
           ))}
         </div>
       )}

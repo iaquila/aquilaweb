@@ -2,12 +2,14 @@ import React, { useState } from 'react';
 import { useAppStore } from '../../store';
 import { electionService } from '../../services/electionService';
 import { ResultSubmission } from '../../types';
+import { useModalA11y } from '../../hooks/useModalA11y';
 import {
   X,
   FileText,
   Camera,
   MapPin,
   AlertTriangle,
+  Loader2,
 } from 'lucide-react';
 
 interface SubmitResultContentProps {
@@ -25,6 +27,8 @@ const SubmitResultContent: React.FC<SubmitResultContentProps> = ({
   userEmail,
   assignedLocations,
 }) => {
+  useModalA11y({ isOpen: true, onClose });
+
   const candidates = electionService.getCandidates('e1');
   const allPollingUnits = electionService.getPollingUnits();
 
@@ -42,6 +46,7 @@ const SubmitResultContent: React.FC<SubmitResultContentProps> = ({
   const [photoAttached, setPhotoAttached] = useState<boolean>(true);
   const [note, setNote] = useState<string>('Form EC8A verified and stamped.');
   const [validationError, setValidationError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const selectedPu = allPollingUnits.find((p) => p.id === selectedPuId);
 
@@ -55,6 +60,8 @@ const SubmitResultContent: React.FC<SubmitResultContentProps> = ({
   };
 
   const handleSave = (isDraft: boolean) => {
+    if (isSubmitting) return;
+
     if (!selectedPu) {
       setValidationError('Please select a valid polling unit.');
       return;
@@ -66,6 +73,8 @@ const SubmitResultContent: React.FC<SubmitResultContentProps> = ({
       );
       return;
     }
+
+    setIsSubmitting(true);
 
     const newResult: ResultSubmission = {
       id: `r-${Date.now()}`,
@@ -100,8 +109,14 @@ const SubmitResultContent: React.FC<SubmitResultContentProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
-      <div className="bg-[#0E1712] border border-[#1C2E24] rounded-3xl max-w-2xl w-full p-6 shadow-2xl space-y-5 animate-in fade-in zoom-in-95 my-8">
+    <div
+      onClick={onClose}
+      className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto"
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="bg-[#0E1712] border border-[#1C2E24] rounded-3xl max-w-2xl w-full p-6 shadow-2xl space-y-5 animate-in fade-in zoom-in-95 my-8"
+      >
         {/* Header */}
         <div className="flex items-center justify-between pb-4 border-b border-[#1C2E24]">
           <div className="flex items-center gap-2.5">
@@ -190,8 +205,8 @@ const SubmitResultContent: React.FC<SubmitResultContentProps> = ({
             </div>
           </div>
 
-          {/* Candidate Votes Breakdown */}
-          <div className="space-y-2 pt-2 border-t border-[#1C2E24]">
+          {/* Candidate Votes Breakdown & Real-Time Tally Meter */}
+          <div className="space-y-3 pt-2 border-t border-[#1C2E24]">
             <div className="flex items-center justify-between">
               <label className="text-xs font-bold text-white uppercase tracking-wider">
                 Certified Candidate Votes Cast
@@ -202,6 +217,61 @@ const SubmitResultContent: React.FC<SubmitResultContentProps> = ({
                   {totalVotesCast}
                 </strong>
               </span>
+            </div>
+
+            {/* Real-Time Form Tally Validation Meter */}
+            <div
+              className={`rounded-xl border p-3 bg-[#070C09] space-y-2 transition-all duration-300 ${
+                totalVotesCast > accreditedVoters
+                  ? 'border-red-500/60 bg-red-950/20'
+                  : totalVotesCast === accreditedVoters
+                  ? 'border-emerald-500/60 bg-emerald-950/20'
+                  : 'border-[#1C2E24]'
+              }`}
+            >
+              <div className="flex items-center justify-between text-xs">
+                <span className="font-bold text-white uppercase tracking-wider text-[11px] flex items-center gap-1.5">
+                  <span>Accreditation Balance</span>
+                  <span
+                    className={`px-1.5 py-0.5 rounded text-[9px] font-black ${
+                      totalVotesCast > accreditedVoters
+                        ? 'bg-red-500/20 text-red-400 border border-red-500/40 animate-pulse'
+                        : totalVotesCast === accreditedVoters
+                        ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40'
+                        : 'bg-zinc-800 text-zinc-300'
+                    }`}
+                  >
+                    {totalVotesCast > accreditedVoters
+                      ? `EXCEEDED BY ${(totalVotesCast - accreditedVoters).toLocaleString()}`
+                      : totalVotesCast === accreditedVoters
+                      ? '100% RECONCILED'
+                      : `${(accreditedVoters - totalVotesCast).toLocaleString()} BALLOTS REMAINING`}
+                  </span>
+                </span>
+                <span className="font-mono text-xs text-[#94A89D]">
+                  <strong className={totalVotesCast > accreditedVoters ? 'text-red-400' : 'text-white'}>
+                    {totalVotesCast.toLocaleString()}
+                  </strong>
+                  {' / '}
+                  <span className="text-[#718579]">{accreditedVoters.toLocaleString()}</span>
+                </span>
+              </div>
+
+              {/* Dynamic Progress Bar */}
+              <div className="w-full bg-[#1C2E24] rounded-full h-1.5 overflow-hidden">
+                <div
+                  className="h-1.5 rounded-full transition-all duration-300"
+                  style={{
+                    width: `${Math.min(100, accreditedVoters > 0 ? (totalVotesCast / accreditedVoters) * 100 : 0)}%`,
+                    backgroundColor:
+                      totalVotesCast > accreditedVoters
+                        ? '#EF4444'
+                        : totalVotesCast === accreditedVoters
+                        ? '#10B981'
+                        : '#34D399',
+                  }}
+                />
+              </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -288,21 +358,26 @@ const SubmitResultContent: React.FC<SubmitResultContentProps> = ({
         <div className="flex flex-col sm:flex-row items-center justify-end gap-2.5 pt-4 border-t border-[#1C2E24]">
           <button
             onClick={onClose}
-            className="w-full sm:w-auto px-4 py-2 rounded-xl text-xs font-bold text-[#718579] hover:text-white transition"
+            disabled={isSubmitting}
+            className="w-full sm:w-auto px-4 py-2 rounded-xl text-xs font-bold text-[#718579] hover:text-white transition disabled:opacity-50"
           >
             Cancel
           </button>
           <button
             onClick={() => handleSave(true)}
-            className="w-full sm:w-auto px-4 py-2 rounded-xl bg-[#15241D] hover:bg-[#1C2E24] text-amber-300 border border-amber-500/30 text-xs font-bold transition"
+            disabled={isSubmitting}
+            className="w-full sm:w-auto px-4 py-2 rounded-xl bg-[#15241D] hover:bg-[#1C2E24] text-amber-300 border border-amber-500/30 text-xs font-bold transition flex items-center justify-center gap-1.5 disabled:opacity-50"
           >
-            Save as Draft Queue
+            {isSubmitting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
+            <span>Save as Draft Queue</span>
           </button>
           <button
             onClick={() => handleSave(false)}
-            className="w-full sm:w-auto px-5 py-2 rounded-xl bg-gradient-to-r from-[#0D6338] to-[#10B981] hover:from-[#15803D] hover:to-[#34D399] text-white text-xs font-bold transition shadow-md shadow-emerald-950/50"
+            disabled={isSubmitting || totalVotesCast > accreditedVoters}
+            className="w-full sm:w-auto px-5 py-2 rounded-xl bg-gradient-to-r from-[#0D6338] to-[#10B981] hover:from-[#15803D] hover:to-[#34D399] text-white text-xs font-bold transition shadow-md shadow-emerald-950/50 flex items-center justify-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Publish Live Result
+            {isSubmitting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
+            <span>Publish Live Result</span>
           </button>
         </div>
       </div>

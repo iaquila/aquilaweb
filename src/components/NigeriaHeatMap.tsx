@@ -312,15 +312,15 @@ export const NigeriaHeatMap: React.FC<NigeriaHeatMapProps> = ({
       { id: 'lga-obio-akpor', name: 'Obio-Akpor LGA', state: 'Rivers', totalPus: 420, baseCollated: 381, baseVotes: { CPA: 19800, DPP: 47200, PL: 24600, PPNN: 1800 } },
       { id: 'lga-phalga', name: 'Port Harcourt LGA', state: 'Rivers', totalPus: 300, baseCollated: 256, baseVotes: { CPA: 16400, DPP: 28900, PL: 24700, PPNN: 1400 } },
       { id: 'lga-amac', name: 'AMAC Area Council', state: 'FCT', totalPus: 380, baseCollated: 340, baseVotes: { CPA: 22100, DPP: 11400, PL: 3900, PPNN: 54200 } },
-      { id: 'lga-bwari', name: 'Bwari Area Council', state: 'FCT', totalPus: 220, baseCollated: 186, baseVotes: { CPA: 9800, DPP: 11200, PL: 28600, NNPP: 1100 } },
-      { id: 'lga-kaduna-north', name: 'Kaduna North LGA', state: 'Kaduna', totalPus: 340, baseCollated: 295, baseVotes: { CPA: 38200, DPP: 29400, PL: 12100, NNPP: 11200 } },
-      { id: 'lga-kaduna-south', name: 'Kaduna South LGA', state: 'Kaduna', totalPus: 310, baseCollated: 260, baseVotes: { CPA: 31500, DPP: 33800, PL: 15400, NNPP: 8900 } },
-      { id: 'lga-ibadan-north', name: 'Ibadan North LGA', state: 'Oyo', totalPus: 410, baseCollated: 375, baseVotes: { CPA: 39100, DPP: 36200, PL: 18700, NNPP: 2400 } },
-      { id: 'lga-ibadan-sw', name: 'Ibadan South-West LGA', state: 'Oyo', totalPus: 360, baseCollated: 318, baseVotes: { CPA: 34800, DPP: 31200, PL: 16900, NNPP: 1900 } },
-      { id: 'lga-enugu-north', name: 'Enugu North LGA', state: 'Enugu', totalPus: 290, baseCollated: 270, baseVotes: { CPA: 4200, DPP: 12800, PL: 58400, NNPP: 800 } },
-      { id: 'lga-nsukka', name: 'Nsukka LGA', state: 'Enugu', totalPus: 320, baseCollated: 285, baseVotes: { CPA: 5100, DPP: 14200, PL: 61200, NNPP: 950 } },
-      { id: 'lga-maiduguri', name: 'Maiduguri LGA', state: 'Borno', totalPus: 380, baseCollated: 340, baseVotes: { CPA: 54200, DPP: 19800, PL: 4100, NNPP: 8300 } },
-      { id: 'lga-jere', name: 'Jere LGA', state: 'Borno', totalPus: 290, baseCollated: 245, baseVotes: { CPA: 41800, DPP: 16200, PL: 3200, NNPP: 6400 } },
+      { id: 'lga-bwari', name: 'Bwari Area Council', state: 'FCT', totalPus: 220, baseCollated: 186, baseVotes: { CPA: 9800, DPP: 11200, PL: 28600, PPNN: 1100 } },
+      { id: 'lga-kaduna-north', name: 'Kaduna North LGA', state: 'Kaduna', totalPus: 340, baseCollated: 295, baseVotes: { CPA: 38200, DPP: 29400, PL: 12100, PPNN: 11200 } },
+      { id: 'lga-kaduna-south', name: 'Kaduna South LGA', state: 'Kaduna', totalPus: 310, baseCollated: 260, baseVotes: { CPA: 31500, DPP: 33800, PL: 15400, PPNN: 8900 } },
+      { id: 'lga-ibadan-north', name: 'Ibadan North LGA', state: 'Oyo', totalPus: 410, baseCollated: 375, baseVotes: { CPA: 39100, DPP: 36200, PL: 18700, PPNN: 2400 } },
+      { id: 'lga-ibadan-sw', name: 'Ibadan South-West LGA', state: 'Oyo', totalPus: 360, baseCollated: 318, baseVotes: { CPA: 34800, DPP: 31200, PL: 16900, PPNN: 1900 } },
+      { id: 'lga-enugu-north', name: 'Enugu North LGA', state: 'Enugu', totalPus: 290, baseCollated: 270, baseVotes: { CPA: 4200, DPP: 12800, PL: 58400, PPNN: 800 } },
+      { id: 'lga-nsukka', name: 'Nsukka LGA', state: 'Enugu', totalPus: 320, baseCollated: 285, baseVotes: { CPA: 5100, DPP: 14200, PL: 61200, PPNN: 950 } },
+      { id: 'lga-maiduguri', name: 'Maiduguri LGA', state: 'Borno', totalPus: 380, baseCollated: 340, baseVotes: { CPA: 54200, DPP: 19800, PL: 4100, PPNN: 8300 } },
+      { id: 'lga-jere', name: 'Jere LGA', state: 'Borno', totalPus: 290, baseCollated: 245, baseVotes: { CPA: 41800, DPP: 16200, PL: 3200, PPNN: 6400 } },
     ];
 
     const candidateNames: Record<string, string> = {
@@ -357,7 +357,10 @@ export const NigeriaHeatMap: React.FC<NigeriaHeatMapProps> = ({
       });
 
       const totalVotes =
-        dynamicVotes.CPA + dynamicVotes.DPP + dynamicVotes.PL + dynamicVotes.PPNN;
+        (dynamicVotes.CPA || 0) +
+        (dynamicVotes.DPP || 0) +
+        (dynamicVotes.PL || 0) +
+        (dynamicVotes.PPNN || 0);
 
       const shares = (
         Object.entries(dynamicVotes) as Array<[LgaCollation['leadingParty'], number]>

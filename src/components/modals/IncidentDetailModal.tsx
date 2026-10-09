@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useAppStore } from '../../store';
 import { IncidentStatus, IncidentReport } from '../../types';
+import { useModalA11y } from '../../hooks/useModalA11y';
 import {
   X,
   AlertTriangle,
@@ -21,6 +22,8 @@ const IncidentDetailContent: React.FC<IncidentDetailContentProps> = ({
   onClose,
   onUpdate,
 }) => {
+  useModalA11y({ isOpen: true, onClose });
+
   const { user } = useAppStore();
   const canTriage =
     user?.role === 'SUPER_ADMINISTRATOR' ||
@@ -39,8 +42,14 @@ const IncidentDetailContent: React.FC<IncidentDetailContentProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
-      <div className="bg-[#0E1712] border border-red-900/60 rounded-3xl max-w-lg w-full p-6 shadow-2xl space-y-5 animate-in fade-in zoom-in-95 my-8">
+    <div
+      onClick={onClose}
+      className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto"
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="bg-[#0E1712] border border-red-900/60 rounded-3xl max-w-lg w-full p-6 shadow-2xl space-y-5 animate-in fade-in zoom-in-95 my-8"
+      >
         {/* Header */}
         <div className="flex items-center justify-between pb-4 border-b border-[#1C2E24]">
           <div className="flex items-center gap-2.5">

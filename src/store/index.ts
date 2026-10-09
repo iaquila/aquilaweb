@@ -128,6 +128,9 @@ interface AppState {
   setSelectedCandidateDetailId: (id: string | null) => void;
   selectedStateFilter: string | null;
   setSelectedStateFilter: (state: string | null) => void;
+  selectedPuFilter: string | null;
+  setSelectedPuFilter: (pu: string | null) => void;
+  consumePuFilter: () => string | null;
 }
 
 const defaultAccount = PREDEFINED_ACCOUNTS[0];
@@ -271,4 +274,13 @@ export const useAppStore = create<AppState>((set, get) => ({
   setSelectedCandidateDetailId: (id) => set({ selectedCandidateDetailId: id }),
   selectedStateFilter: null,
   setSelectedStateFilter: (state) => set({ selectedStateFilter: state }),
+  selectedPuFilter: null,
+  setSelectedPuFilter: (pu) => set({ selectedPuFilter: pu }),
+  consumePuFilter: () => {
+    const val = get().selectedPuFilter;
+    if (val) {
+      set({ selectedPuFilter: null });
+    }
+    return val;
+  },
 }));

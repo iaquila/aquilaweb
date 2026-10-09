@@ -2,12 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { useAppStore } from '../../store';
 import { electionService } from '../../services/electionService';
 import { IncidentReport, IncidentCategory, IncidentSeverity } from '../../types';
+import { useModalA11y } from '../../hooks/useModalA11y';
 import {
   X,
   AlertTriangle,
   Camera,
   Mic,
   StopCircle,
+  Loader2,
 } from 'lucide-react';
 
 interface ReportIncidentContentProps {
@@ -23,6 +25,8 @@ const ReportIncidentContent: React.FC<ReportIncidentContentProps> = ({
   defaultPuId,
   userEmail,
 }) => {
+  useModalA11y({ isOpen: true, onClose });
+
   const pollingUnits = electionService.getPollingUnits();
 
   const [category, setCategory] = useState<IncidentCategory>('VOTE_BUYING');
@@ -34,6 +38,7 @@ const ReportIncidentContent: React.FC<ReportIncidentContentProps> = ({
   const [isRecordingAudio, setIsRecordingAudio] = useState<boolean>(false);
   const [recordSeconds, setRecordSeconds] = useState<number>(0);
   const [mediaUrls, setMediaUrls] = useState<string[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // 120-second audio recorder timer simulation (as requested in PRD Part 7)
   useEffect(() => {
@@ -73,6 +78,9 @@ const ReportIncidentContent: React.FC<ReportIncidentContentProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmitting) return;
+
+    setIsSubmitting(true);
     const pu = pollingUnits.find((p) => p.id === selectedPuId);
 
     const newIncident: IncidentReport = {
@@ -100,8 +108,14 @@ const ReportIncidentContent: React.FC<ReportIncidentContentProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
-      <div className="bg-[#0E1712] border border-red-900/60 rounded-3xl max-w-xl w-full p-6 shadow-2xl space-y-5 animate-in fade-in zoom-in-95 my-8">
+    <div
+      onClick={onClose}
+      className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto"
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="bg-[#0E1712] border border-red-900/60 rounded-3xl max-w-xl w-full p-6 shadow-2xl space-y-5 animate-in fade-in zoom-in-95 my-8"
+      >
         {/* Header */}
         <div className="flex items-center justify-between pb-4 border-b border-[#1C2E24]">
           <div className="flex items-center gap-2.5">
@@ -264,15 +278,18 @@ const ReportIncidentContent: React.FC<ReportIncidentContentProps> = ({
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-xs font-bold text-[#718579] hover:text-white"
+              disabled={isSubmitting}
+              className="px-4 py-2 text-xs font-bold text-[#718579] hover:text-white transition disabled:opacity-50"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="px-5 py-2 rounded-xl bg-red-600 hover:bg-red-500 text-white text-xs font-bold transition shadow-lg shadow-red-950/50"
+              disabled={isSubmitting}
+              className="px-5 py-2 rounded-xl bg-red-600 hover:bg-red-500 text-white text-xs font-bold transition shadow-lg shadow-red-950/50 flex items-center gap-1.5 disabled:opacity-50"
             >
-              Transmit Urgent Report
+              {isSubmitting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
+              <span>Transmit Urgent Report</span>
             </button>
           </div>
         </form>

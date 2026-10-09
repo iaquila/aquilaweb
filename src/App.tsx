@@ -46,7 +46,7 @@ export const AppContent: React.FC = () => {
       <Navigation />
 
       {/* Viewport Content */}
-      <main className="flex-1 max-w-[1536px] w-full min-w-0 mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <main className="flex-1 max-w-7xl w-full min-w-0 mx-auto px-4 sm:px-6 lg:px-8 py-5 sm:py-6">
         {activeTab === 'dashboard' && <DashboardView />}
         {activeTab === 'elections' && <ElectionsView />}
         {activeTab === 'results' && <ResultsView />}

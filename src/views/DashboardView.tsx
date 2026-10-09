@@ -32,6 +32,8 @@ export const DashboardView: React.FC = () => {
     setReportIncidentOpen,
     setDraftsQueueOpen,
     setSelectedIncidentId,
+    setSelectedResultId,
+    setSelectedPuFilter,
     setActiveTab,
   } = useAppStore();
 
@@ -157,9 +159,9 @@ export const DashboardView: React.FC = () => {
       {/* 1. Station Console Header + Horizontal Candidate Snapshot for Election Officer */}
       {isOfficerOrAbove ? (
         <div className="w-full rounded-xl border border-[#1C2E24] bg-[#0D6338]/[0.05] p-3 sm:p-3.5 lg:p-4 shadow-md backdrop-blur-sm">
-          <div className="flex flex-col 2xl:flex-row 2xl:items-center justify-between gap-4">
+          <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-3 sm:gap-4">
             {/* Left Telemetry Strip (Presidential Collation + Reporting PUs + Total Tallied) */}
-            <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-6 flex-shrink-0">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-5 flex-shrink-0">
               <div className="flex items-center gap-3">
                 <div>
                   <div className="flex items-center gap-1.5">
@@ -176,7 +178,7 @@ export const DashboardView: React.FC = () => {
 
               <div className="hidden sm:block h-8 w-px bg-[#1C2E24]" />
 
-              <div className="flex items-center gap-3 sm:gap-5 pt-2 sm:pt-0 border-t sm:border-t-0 border-[#1C2E24]/60">
+              <div className="flex items-center gap-3 sm:gap-4 pt-2 sm:pt-0 border-t sm:border-t-0 border-[#1C2E24]/60">
                 <div className="text-left sm:text-right">
                   <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-[#718579] block leading-none">
                     Reporting PUs
@@ -199,7 +201,7 @@ export const DashboardView: React.FC = () => {
               </div>
             </div>
 
-            <div className="hidden 2xl:block h-10 w-px bg-[#1C2E24]" />
+            <div className="hidden xl:block h-10 w-px bg-[#1C2E24]" />
 
             {/* Right: Horizontal Snapshot Performance (Candidates in dead space row) */}
             <div className="flex-1 min-w-0">
@@ -226,7 +228,7 @@ export const DashboardView: React.FC = () => {
                           : 'border-[#1C2E24] bg-[#070C09]/80 hover:border-[#10B981]/40'
                       }`}
                     >
-                      <div className="flex items-center justify-between gap-1.5 mb-1">
+                      <div className="flex items-center justify-between gap-1 mb-1">
                         <div className="flex items-center gap-1.5 min-w-0">
                           <span
                             className={`w-4 h-4 sm:w-5 sm:h-5 rounded text-[9px] sm:text-[10px] font-black flex items-center justify-center flex-shrink-0 ${
@@ -276,9 +278,9 @@ export const DashboardView: React.FC = () => {
         </div>
       ) : (
         /* Field Agent / Polling Agent Station Console Header */
-        <div className="w-full md:w-fit rounded-xl border border-[#1C2E24] bg-[#0D6338]/[0.05] p-3 sm:p-3.5 lg:p-4 shadow-md backdrop-blur-sm">
-          <div className="flex flex-col md:flex-row md:items-center gap-3 md:gap-6 lg:gap-8">
-            <div className="flex items-center justify-between md:justify-start gap-3">
+        <div className="w-full rounded-xl border border-[#1C2E24] bg-[#0D6338]/[0.05] p-3 sm:p-3.5 lg:p-4 shadow-md backdrop-blur-sm">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-6">
+            <div className="flex items-center justify-between sm:justify-start gap-3">
               <div>
                 <div className="flex items-center gap-1.5">
                   <span className="w-1.5 h-1.5 rounded-full bg-[#10B981] animate-pulse" />
@@ -291,7 +293,7 @@ export const DashboardView: React.FC = () => {
                 </h1>
               </div>
 
-              <div className="md:hidden inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#10B981]/10 border border-[#10B981]/30">
+              <div className="sm:hidden inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#10B981]/10 border border-[#10B981]/30">
                 <span className="w-1.5 h-1.5 rounded-full bg-[#10B981] animate-ping" />
                 <span className="text-[10px] font-black uppercase tracking-wider text-[#10B981]">
                   LIVE
@@ -299,10 +301,10 @@ export const DashboardView: React.FC = () => {
               </div>
             </div>
 
-            <div className="hidden md:block h-8 w-px bg-[#1C2E24]" />
+            <div className="hidden sm:block h-8 w-px bg-[#1C2E24]" />
 
-            <div className="flex items-center justify-between md:justify-start gap-2.5 sm:gap-5 pt-2.5 md:pt-0 border-t md:border-t-0 border-[#1C2E24]/60">
-              <div className="text-left md:text-right">
+            <div className="flex items-center justify-between sm:justify-start gap-2.5 sm:gap-5 pt-2.5 sm:pt-0 border-t sm:border-t-0 border-[#1C2E24]/60">
+              <div className="text-left sm:text-right">
                 <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-[#718579] block leading-none">
                   Reporting PUs
                 </span>
@@ -313,7 +315,7 @@ export const DashboardView: React.FC = () => {
 
               <div className="h-6 w-px bg-[#1C2E24]" />
 
-              <div className="text-left md:text-right">
+              <div className="text-left sm:text-right">
                 <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-[#718579] block leading-none">
                   Total Tallied
                 </span>
@@ -324,7 +326,7 @@ export const DashboardView: React.FC = () => {
 
               <div className="h-6 w-px bg-[#1C2E24]" />
 
-              <div className="text-left md:text-right">
+              <div className="text-left sm:text-right">
                 <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-[#718579] block leading-none">
                   Status
                 </span>
@@ -333,7 +335,7 @@ export const DashboardView: React.FC = () => {
                 </span>
               </div>
 
-              <div className="hidden md:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#10B981]/10 border border-[#10B981]/30 ml-2 whitespace-nowrap">
+              <div className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#10B981]/10 border border-[#10B981]/30 ml-2 whitespace-nowrap">
                 <span className="w-1.5 h-1.5 rounded-full bg-[#10B981] animate-ping" />
                 <span className="text-[10px] font-black uppercase tracking-wider text-[#10B981]">
                   LIVE COLLATION
@@ -793,6 +795,17 @@ export const DashboardView: React.FC = () => {
                     <button
                       onClick={() => {
                         if (isSupervisory || isPub) {
+                          const matching = results.find(
+                            (r) =>
+                              r.pollingUnitId === pu.id ||
+                              r.pollingUnitName.toLowerCase().includes(pu.code.toLowerCase()) ||
+                              r.pollingUnitName.toLowerCase().includes(pu.name.toLowerCase())
+                          );
+                          if (matching) {
+                            setSelectedResultId(matching.id);
+                          } else {
+                            setSelectedPuFilter(pu.name);
+                          }
                           setActiveTab('results');
                         } else if (isDraft) {
                           setDraftsQueueOpen(true);
@@ -818,80 +831,92 @@ export const DashboardView: React.FC = () => {
 
         {/* Right Column: Quick Actions + Field Incident Stream */}
         <div className="space-y-6">
-          {/* 6. Quick Actions Grid */}
-      <div className="grid grid-cols-2 gap-3 sm:gap-4">
-        {isSupervisory ? (
-          <>
+          {/* 6. Quick Actions Grid (Compact Ergonomic Controls) */}
+          <div className="grid grid-cols-2 gap-2.5">
+            {isSupervisory ? (
+              <>
+                <button
+                  onClick={() => setActiveTab('results')}
+                  className="rounded-xl border border-[#1C2E24] bg-[#0E1712] p-2.5 sm:p-3 text-left hover:border-[#10B981]/50 transition group flex items-center gap-2.5 sm:gap-3"
+                >
+                  <div className="w-8 h-8 rounded-lg bg-[#10B981]/15 text-[#10B981] flex items-center justify-center flex-shrink-0">
+                    <Search className="w-4 h-4" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-xs font-bold text-white group-hover:text-[#10B981] transition truncate">Search Results</p>
+                    <p className="text-[10px] text-[#718579] truncate">Audit returns</p>
+                  </div>
+                </button>
+
+                <button
+                  onClick={() => setActiveTab('incidents')}
+                  className="rounded-xl border border-[#1C2E24] bg-[#0E1712] p-2.5 sm:p-3 text-left hover:border-red-500/50 transition group flex items-center gap-2.5 sm:gap-3"
+                >
+                  <div className="w-8 h-8 rounded-lg bg-red-500/15 text-red-400 flex items-center justify-center flex-shrink-0">
+                    <AlertTriangle className="w-4 h-4" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-xs font-bold text-white group-hover:text-red-400 transition truncate">Incident Control</p>
+                    <p className="text-[10px] text-[#718579] truncate">Monitor &amp; triage</p>
+                  </div>
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  onClick={() => setSubmitResultOpen(true)}
+                  className="rounded-xl border border-[#1C2E24] bg-[#0E1712] p-2.5 sm:p-3 text-left hover:border-[#10B981]/50 transition group flex items-center gap-2.5 sm:gap-3"
+                >
+                  <div className="w-8 h-8 rounded-lg bg-[#10B981]/15 text-[#10B981] flex items-center justify-center flex-shrink-0">
+                    <PlusCircle className="w-4 h-4" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-xs font-bold text-white group-hover:text-[#10B981] transition truncate">Enter Results</p>
+                    <p className="text-[10px] text-[#718579] truncate">PU ballot return</p>
+                  </div>
+                </button>
+
+                <button
+                  onClick={() => setReportIncidentOpen(true)}
+                  className="rounded-xl border border-[#1C2E24] bg-[#0E1712] p-2.5 sm:p-3 text-left hover:border-red-500/50 transition group flex items-center gap-2.5 sm:gap-3"
+                >
+                  <div className="w-8 h-8 rounded-lg bg-red-500/15 text-red-400 flex items-center justify-center flex-shrink-0">
+                    <AlertTriangle className="w-4 h-4" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-xs font-bold text-white group-hover:text-red-400 transition truncate">Report Incident</p>
+                    <p className="text-[10px] text-[#718579] truncate">Live covert filing</p>
+                  </div>
+                </button>
+              </>
+            )}
+
             <button
               onClick={() => setActiveTab('results')}
-              className="rounded-2xl border border-[#1C2E24] bg-[#0E1712] p-4 text-left hover:border-[#10B981]/50 transition group"
+              className="rounded-xl border border-[#1C2E24] bg-[#0E1712] p-2.5 sm:p-3 text-left hover:border-amber-500/50 transition group flex items-center gap-2.5 sm:gap-3"
             >
-              <div className="w-10 h-10 rounded-xl bg-[#10B981]/15 text-[#10B981] flex items-center justify-center mb-2">
-                <Search className="w-5 h-5" />
+              <div className="w-8 h-8 rounded-lg bg-amber-500/15 text-amber-400 flex items-center justify-center flex-shrink-0">
+                <BarChart3 className="w-4 h-4" />
               </div>
-              <p className="text-sm font-bold text-white group-hover:text-[#10B981] transition">Search Results</p>
-              <p className="text-xs text-[#718579]">Audit returns</p>
+              <div className="min-w-0">
+                <p className="text-xs font-bold text-white group-hover:text-amber-400 transition truncate">Collation Room</p>
+                <p className="text-[10px] text-[#718579] truncate">Wards &amp; LGA summary</p>
+              </div>
             </button>
 
             <button
-              onClick={() => setActiveTab('incidents')}
-              className="rounded-2xl border border-[#1C2E24] bg-[#0E1712] p-4 text-left hover:border-red-500/50 transition group"
+              onClick={() => setActiveTab('locations')}
+              className="rounded-xl border border-[#1C2E24] bg-[#0E1712] p-2.5 sm:p-3 text-left hover:border-[#10B981]/50 transition group flex items-center gap-2.5 sm:gap-3"
             >
-              <div className="w-10 h-10 rounded-xl bg-red-500/15 text-red-400 flex items-center justify-center mb-2">
-                <AlertTriangle className="w-5 h-5" />
+              <div className="w-8 h-8 rounded-lg bg-[#10B981]/15 text-[#10B981] flex items-center justify-center flex-shrink-0">
+                <Map className="w-4 h-4" />
               </div>
-              <p className="text-sm font-bold text-white group-hover:text-red-400 transition">Incident Control</p>
-              <p className="text-xs text-[#718579]">Monitor &amp; triage</p>
-            </button>
-          </>
-        ) : (
-          <>
-            <button
-              onClick={() => setSubmitResultOpen(true)}
-              className="rounded-2xl border border-[#1C2E24] bg-[#0E1712] p-4 text-left hover:border-[#10B981]/50 transition group"
-            >
-              <div className="w-10 h-10 rounded-xl bg-[#10B981]/15 text-[#10B981] flex items-center justify-center mb-2">
-                <PlusCircle className="w-5 h-5" />
+              <div className="min-w-0">
+                <p className="text-xs font-bold text-white group-hover:text-[#10B981] transition truncate">Locations</p>
+                <p className="text-[10px] text-[#718579] truncate">National registry</p>
               </div>
-              <p className="text-sm font-bold text-white group-hover:text-[#10B981] transition">Enter Results</p>
-              <p className="text-xs text-[#718579]">PU ballot return</p>
             </button>
-
-            <button
-              onClick={() => setReportIncidentOpen(true)}
-              className="rounded-2xl border border-[#1C2E24] bg-[#0E1712] p-4 text-left hover:border-red-500/50 transition group"
-            >
-              <div className="w-10 h-10 rounded-xl bg-red-500/15 text-red-400 flex items-center justify-center mb-2">
-                <AlertTriangle className="w-5 h-5" />
-              </div>
-              <p className="text-sm font-bold text-white group-hover:text-red-400 transition">Report Incident</p>
-              <p className="text-xs text-[#718579]">Live covert filing</p>
-            </button>
-          </>
-        )}
-
-        <button
-          onClick={() => setActiveTab('results')}
-          className="rounded-2xl border border-[#1C2E24] bg-[#0E1712] p-4 text-left hover:border-amber-500/50 transition group"
-        >
-          <div className="w-10 h-10 rounded-xl bg-amber-500/15 text-amber-400 flex items-center justify-center mb-2">
-            <BarChart3 className="w-5 h-5" />
           </div>
-          <p className="text-sm font-bold text-white group-hover:text-amber-400 transition">Collation Room</p>
-          <p className="text-xs text-[#718579]">Wards &amp; LGA summary</p>
-        </button>
-
-        <button
-          onClick={() => setActiveTab('locations')}
-          className="rounded-2xl border border-[#1C2E24] bg-[#0E1712] p-4 text-left hover:border-[#10B981]/50 transition group"
-        >
-          <div className="w-10 h-10 rounded-xl bg-[#10B981]/15 text-[#10B981] flex items-center justify-center mb-2">
-            <Map className="w-5 h-5" />
-          </div>
-          <p className="text-sm font-bold text-white group-hover:text-[#10B981] transition">Locations</p>
-          <p className="text-xs text-[#718579]">National registry</p>
-        </button>
-      </div>
 
       {/* 7. Field Incident Stream (app/(app)/(tabs)/index.tsx lines 956-986) */}
       {incidents.length > 0 && (

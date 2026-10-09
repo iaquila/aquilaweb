@@ -10,6 +10,7 @@ import {
   Vote,
 } from 'lucide-react';
 import { EmptyState } from '../components/EmptyState';
+import { Card } from '../components/Card';
 
 export const ResultsView: React.FC = () => {
   const {
@@ -19,16 +20,20 @@ export const ResultsView: React.FC = () => {
     setSelectedResultId,
     user,
     selectedStateFilter,
+    consumePuFilter,
   } = useAppStore();
 
   const [searchQuery, setSearchQuery] = useState(selectedStateFilter || '');
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'PUBLISHED' | 'SUBMITTED' | 'DRAFT'>('ALL');
 
   React.useEffect(() => {
-    if (selectedStateFilter) {
+    const puFilter = consumePuFilter();
+    if (puFilter) {
+      setSearchQuery(puFilter);
+    } else if (selectedStateFilter) {
       setSearchQuery(selectedStateFilter);
     }
-  }, [selectedStateFilter]);
+  }, [consumePuFilter, selectedStateFilter]);
 
   const candidates = electionService.getCandidates('e1');
 
@@ -84,7 +89,7 @@ export const ResultsView: React.FC = () => {
 
       {/* KPI Collation Executive Metrics Strip */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
-        <div className="bg-[#0E1712] border border-[#1C2E24] p-4 rounded-2xl shadow-lg">
+        <Card className="p-4 shadow-lg">
           <span className="text-[10px] font-bold text-[#718579] uppercase tracking-wider block">
             TOTAL PU RETURNS
           </span>
@@ -92,9 +97,9 @@ export const ResultsView: React.FC = () => {
             <span className="text-2xl font-black text-white font-mono">{results.length}</span>
             <span className="text-xs text-[#10B981] font-semibold">100% Ingestion</span>
           </div>
-        </div>
+        </Card>
 
-        <div className="bg-[#0E1712] border border-[#1C2E24] p-4 rounded-2xl shadow-lg">
+        <Card className="p-4 shadow-lg">
           <span className="text-[10px] font-bold text-[#718579] uppercase tracking-wider block">
             ACCREDITED VOTERS
           </span>
@@ -104,9 +109,9 @@ export const ResultsView: React.FC = () => {
             </span>
             <span className="text-xs text-[#718579]">BVAS verified</span>
           </div>
-        </div>
+        </Card>
 
-        <div className="bg-[#0E1712] border border-[#1C2E24] p-4 rounded-2xl shadow-lg">
+        <Card className="p-4 shadow-lg">
           <span className="text-[10px] font-bold text-[#718579] uppercase tracking-wider block">
             VERIFIED BALLOTS CAST
           </span>
@@ -116,9 +121,9 @@ export const ResultsView: React.FC = () => {
             </span>
             <span className="text-xs text-[#10B981] font-semibold">Valid</span>
           </div>
-        </div>
+        </Card>
 
-        <div className="bg-[#0E1712] border border-[#1C2E24] p-4 rounded-2xl shadow-lg">
+        <Card className="p-4 shadow-lg">
           <span className="text-[10px] font-bold text-[#718579] uppercase tracking-wider block">
             PARALLEL AUDIT ALERTS
           </span>
@@ -139,11 +144,11 @@ export const ResultsView: React.FC = () => {
             </span>
             <span className="text-xs text-amber-400">Variances</span>
           </div>
-        </div>
+        </Card>
       </div>
 
       {/* Search Bar & Status Filters */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-[#0E1712] border border-[#1C2E24] p-3 rounded-2xl shadow-xl">
+      <Card className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 p-3 shadow-xl">
         <div className="relative flex-1">
           <Search className="w-4 h-4 text-[#718579] absolute left-3 top-1/2 -translate-y-1/2" />
           <input
@@ -171,7 +176,7 @@ export const ResultsView: React.FC = () => {
             </button>
           ))}
         </div>
-      </div>
+      </Card>
 
       {/* Collation Table Cards */}
       <div className="space-y-3">
@@ -188,10 +193,10 @@ export const ResultsView: React.FC = () => {
             }
 
             return (
-              <div
+              <Card
                 key={result.id}
                 onClick={() => setSelectedResultId(result.id)}
-                className="bg-[#0E1712] border border-[#1C2E24] hover:border-emerald-500/50 rounded-2xl p-4 lg:p-5 transition cursor-pointer shadow-md space-y-4"
+                className="hover:border-emerald-500/50 p-4 lg:p-5 transition cursor-pointer shadow-md space-y-4"
               >
                 {/* Header Row */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-[#1C2E24]">
@@ -308,7 +313,7 @@ export const ResultsView: React.FC = () => {
                     View Audit Detail &amp; Proof →
                   </span>
                 </div>
-              </div>
+              </Card>
             );
           })
         ) : (

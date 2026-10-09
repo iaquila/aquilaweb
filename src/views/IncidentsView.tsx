@@ -8,6 +8,7 @@ import {
   ShieldCheck,
 } from 'lucide-react';
 import { EmptyState } from '../components/EmptyState';
+import { Card } from '../components/Card';
 
 export const IncidentsView: React.FC = () => {
   const { incidents, setReportIncidentOpen, setSelectedIncidentId, user } = useAppStore();
@@ -70,7 +71,7 @@ export const IncidentsView: React.FC = () => {
 
       {/* Incident Status Metric Badges */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
-        <div className="bg-[#0E1712] border border-[#1C2E24] p-4 rounded-2xl shadow-lg">
+        <Card className="p-4 shadow-lg">
           <span className="text-[10px] font-bold text-[#718579] uppercase tracking-wider block">
             TOTAL LOGGED
           </span>
@@ -78,9 +79,9 @@ export const IncidentsView: React.FC = () => {
             <span className="text-2xl font-black text-white font-mono">{incidents.length}</span>
             <span className="text-xs text-[#718579]">Field reports</span>
           </div>
-        </div>
+        </Card>
 
-        <div className="bg-[#0E1712] border border-red-500/30 p-4 rounded-2xl shadow-lg">
+        <Card className="p-4 shadow-lg border-red-500/30">
           <span className="text-[10px] font-bold text-red-400 uppercase tracking-wider block">
             CRITICAL / HIGH SEVERITY
           </span>
@@ -90,9 +91,9 @@ export const IncidentsView: React.FC = () => {
             </span>
             <span className="text-xs text-red-400">Escalated</span>
           </div>
-        </div>
+        </Card>
 
-        <div className="bg-[#0E1712] border border-amber-500/30 p-4 rounded-2xl shadow-lg">
+        <Card className="p-4 shadow-lg border-amber-500/30">
           <span className="text-[10px] font-bold text-amber-400 uppercase tracking-wider block">
             UNDER REVIEW
           </span>
@@ -102,9 +103,9 @@ export const IncidentsView: React.FC = () => {
             </span>
             <span className="text-xs text-amber-400">Active triage</span>
           </div>
-        </div>
+        </Card>
 
-        <div className="bg-[#0E1712] border border-emerald-500/30 p-4 rounded-2xl shadow-lg">
+        <Card className="p-4 shadow-lg border-emerald-500/30">
           <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider block">
             RESOLVED / MITIGATED
           </span>
@@ -114,11 +115,11 @@ export const IncidentsView: React.FC = () => {
             </span>
             <span className="text-xs text-emerald-400">De-escalated</span>
           </div>
-        </div>
+        </Card>
       </div>
 
       {/* Search and Filters */}
-      <div className="bg-[#0E1712] border border-[#1C2E24] p-4 rounded-2xl shadow-xl space-y-3">
+      <Card className="p-4 shadow-xl space-y-3">
         <div className="relative">
           <Search className="w-4 h-4 text-[#718579] absolute left-3 top-1/2 -translate-y-1/2" />
           <input
@@ -169,16 +170,16 @@ export const IncidentsView: React.FC = () => {
             </button>
           ))}
         </div>
-      </div>
+      </Card>
 
       {/* Incident Cards */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {filteredIncidents.length > 0 ? (
           filteredIncidents.map((inc) => (
-            <div
+            <Card
               key={inc.id}
               onClick={() => setSelectedIncidentId(inc.id)}
-              className="bg-[#0E1712] border border-[#1C2E24] hover:border-red-500/50 rounded-2xl p-4 lg:p-5 transition cursor-pointer shadow-md space-y-3 flex flex-col justify-between"
+              className="hover:border-red-500/50 p-4 lg:p-5 transition cursor-pointer shadow-md space-y-3 flex flex-col justify-between"
             >
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
@@ -245,7 +246,7 @@ export const IncidentsView: React.FC = () => {
                   <span className="text-red-400 font-semibold">Triage / Inspect →</span>
                 </div>
               </div>
-            </div>
+            </Card>
           ))
         ) : (
           <div className="col-span-full">

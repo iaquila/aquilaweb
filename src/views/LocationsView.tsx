@@ -10,6 +10,7 @@ import {
   Map as MapIcon,
 } from 'lucide-react';
 import { NigeriaHeatMap } from '../components/NigeriaHeatMap';
+import { Card } from '../components/Card';
 
 export const LocationsView: React.FC = () => {
   const { results, setSubmitResultOpen, user, selectedStateFilter } = useAppStore();
@@ -128,7 +129,7 @@ export const LocationsView: React.FC = () => {
       {/* Main Grid: LGA Column (4 cols) & Polling Units List (8 cols) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* LGA Selector */}
-        <div className="lg:col-span-4 bg-[#0E1712] border border-[#1C2E24] rounded-3xl p-5 shadow-xl space-y-3">
+        <Card className="lg:col-span-4 p-5 shadow-xl space-y-3">
           <div className="flex items-center justify-between pb-3 border-b border-[#1C2E24]">
             <h2 className="text-xs font-bold text-white uppercase tracking-wider">
               {selectedState?.name} LGAs ({lgas.length})
@@ -155,10 +156,10 @@ export const LocationsView: React.FC = () => {
               );
             })}
           </div>
-        </div>
+        </Card>
 
         {/* Polling Units Column */}
-        <div className="lg:col-span-8 bg-[#0E1712] border border-[#1C2E24] rounded-3xl p-6 shadow-xl space-y-4">
+        <Card className="lg:col-span-8 p-6 shadow-xl space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#1C2E24]">
             <div>
               <h2 className="text-base font-extrabold text-white">
@@ -279,7 +280,7 @@ export const LocationsView: React.FC = () => {
               </div>
             )}
           </div>
-        </div>
+        </Card>
       </div>
         </>
       )}
