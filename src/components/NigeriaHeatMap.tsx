@@ -697,74 +697,72 @@ export const NigeriaHeatMap: React.FC<NigeriaHeatMapProps> = ({
       {/* --------------------------------------------------------------------- */}
       {/* Tactical Quick Navigation Bar (State & LGA Alphabetical Dropdowns + Search) */}
       {/* --------------------------------------------------------------------- */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 py-2.5 px-3 border-b border-[#1C2E24]/70 bg-[#080E0A]/80 rounded-xl my-2 text-xs">
-        <div className="flex flex-wrap items-center gap-2">
-          {/* State Alphabetical Dropdown */}
-          <div className="flex items-center gap-1.5 bg-[#0D1812] border border-[#1F3327] rounded-lg px-2.5 py-1.5 focus-within:border-emerald-500 transition">
-            <Globe className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-            <label htmlFor="heatmap-state-select" className="text-[10px] font-bold uppercase tracking-wider text-[#718579] shrink-0">
-              State:
-            </label>
-            <select
-              id="heatmap-state-select"
-              value={effectiveLgaState}
-              onChange={(e) => {
-                const selectedState = e.target.value;
-                setActiveLgaState(selectedState);
-                const stateItem = stateHeatmapData.find((s) => s.name === selectedState);
-                if (stateItem) {
-                  setSelectedMapStateId(stateItem.id);
-                }
-                const firstLga = lgaHeatmapData.find((l) => l.state === selectedState);
-                if (firstLga) {
-                  setSelectedMapLgaId(firstLga.id);
-                }
-              }}
-              className="bg-transparent text-white font-bold text-xs focus:outline-none cursor-pointer pr-1"
-            >
-              {statesInView.map((stName) => {
-                const st = stateHeatmapData.find((s) => s.name === stName);
-                return (
-                  <option key={stName} value={stName} className="bg-[#0E1712] text-white">
-                    {stName} {st ? `(${st.leadingParty} lead · ${st.lgaCount} LGAs)` : ''}
-                  </option>
-                );
-              })}
-            </select>
-          </div>
-
-          {/* LGA Alphabetical Dropdown (active when geoLevel === 'lga') */}
-          {geoLevel === 'lga' && (
-            <div className="flex items-center gap-1.5 bg-[#0D1812] border border-[#1F3327] rounded-lg px-2.5 py-1.5 focus-within:border-emerald-500 transition">
-              <MapPin className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-              <label htmlFor="heatmap-lga-select" className="text-[10px] font-bold uppercase tracking-wider text-[#718579] shrink-0">
-                LGA:
-              </label>
-              <select
-                id="heatmap-lga-select"
-                value={activeSelectedLga.id}
-                onChange={(e) => {
-                  const lgaId = e.target.value;
-                  setSelectedMapLgaId(lgaId);
-                }}
-                className="bg-transparent text-white font-bold text-xs focus:outline-none cursor-pointer pr-1 max-w-[210px] truncate"
-              >
-                {mapLgas
-                  .slice()
-                  .sort((a, b) => a.name.localeCompare(b.name))
-                  .map((lga) => (
-                    <option key={lga.id} value={lga.id} className="bg-[#0E1712] text-white">
-                      {lga.name} ({lga.leadingParty} {lga.leadingPct}%)
-                    </option>
-                  ))}
-              </select>
-            </div>
-          )}
+      <div className="flex flex-wrap items-center gap-2 py-2.5 px-3 border-b border-[#1C2E24]/70 bg-[#080E0A]/80 rounded-xl my-2 text-xs">
+        {/* State Alphabetical Dropdown */}
+        <div className="flex items-center gap-1.5 bg-[#0D1812] border border-[#1F3327] rounded-lg px-2.5 py-1.5 focus-within:border-emerald-500 transition shrink-0">
+          <Globe className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+          <label htmlFor="heatmap-state-select" className="text-[10px] font-bold uppercase tracking-wider text-[#718579] shrink-0">
+            State:
+          </label>
+          <select
+            id="heatmap-state-select"
+            value={effectiveLgaState}
+            onChange={(e) => {
+              const selectedState = e.target.value;
+              setActiveLgaState(selectedState);
+              const stateItem = stateHeatmapData.find((s) => s.name === selectedState);
+              if (stateItem) {
+                setSelectedMapStateId(stateItem.id);
+              }
+              const firstLga = lgaHeatmapData.find((l) => l.state === selectedState);
+              if (firstLga) {
+                setSelectedMapLgaId(firstLga.id);
+              }
+            }}
+            className="bg-transparent text-white font-bold text-xs focus:outline-none cursor-pointer pr-1"
+          >
+            {statesInView.map((stName) => {
+              const st = stateHeatmapData.find((s) => s.name === stName);
+              return (
+                <option key={stName} value={stName} className="bg-[#0E1712] text-white">
+                  {stName} {st ? `(${st.leadingParty} lead · ${st.lgaCount} LGAs)` : ''}
+                </option>
+              );
+            })}
+          </select>
         </div>
 
+        {/* LGA Alphabetical Dropdown (active when geoLevel === 'lga') */}
+        {geoLevel === 'lga' && (
+          <div className="flex items-center gap-1.5 bg-[#0D1812] border border-[#1F3327] rounded-lg px-2.5 py-1.5 focus-within:border-emerald-500 transition shrink-0">
+            <MapPin className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+            <label htmlFor="heatmap-lga-select" className="text-[10px] font-bold uppercase tracking-wider text-[#718579] shrink-0">
+              LGA:
+            </label>
+            <select
+              id="heatmap-lga-select"
+              value={activeSelectedLga.id}
+              onChange={(e) => {
+                const lgaId = e.target.value;
+                setSelectedMapLgaId(lgaId);
+              }}
+              className="bg-transparent text-white font-bold text-xs focus:outline-none cursor-pointer pr-1 max-w-[210px] truncate"
+            >
+              {mapLgas
+                .slice()
+                .sort((a, b) => a.name.localeCompare(b.name))
+                .map((lga) => (
+                  <option key={lga.id} value={lga.id} className="bg-[#0E1712] text-white">
+                    {lga.name} ({lga.leadingParty} {lga.leadingPct}%)
+                  </option>
+                ))}
+            </select>
+          </div>
+        )}
+
         {/* Quick Search Jump Input */}
-        <div className="relative flex-1 sm:max-w-[240px]">
-          <Search className="w-3.5 h-3.5 text-[#718579] absolute left-2.5 top-1/2 -translate-y-1/2" />
+        <div className="relative flex-1 min-w-[200px] max-w-full">
+          <Search className="w-3.5 h-3.5 text-[#718579] absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
           <input
             type="text"
             value={searchQuery}
