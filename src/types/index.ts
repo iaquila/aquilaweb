@@ -5,6 +5,8 @@ export type UserRole =
   | 'FIELD_AGENT'
   | 'POLLING_AGENT';
 
+export type DataSource = 'OBSERVED' | 'INEC';
+
 export type ElectionStatus = 'DRAFT' | 'SCHEDULED' | 'ACTIVE' | 'COMPLETED' | 'ARCHIVED';
 
 export type ResultStatus = 'DRAFT' | 'SUBMITTED' | 'PUBLISHED' | 'CORRECTED';

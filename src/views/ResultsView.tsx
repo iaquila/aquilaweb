@@ -21,6 +21,7 @@ export const ResultsView: React.FC = () => {
     user,
     selectedStateFilter,
     consumePuFilter,
+    consumeStateFilter,
   } = useAppStore();
 
   const [searchQuery, setSearchQuery] = useState(selectedStateFilter || '');
@@ -28,12 +29,13 @@ export const ResultsView: React.FC = () => {
 
   React.useEffect(() => {
     const puFilter = consumePuFilter();
+    const stateFilter = consumeStateFilter();
     if (puFilter) {
       setSearchQuery(puFilter);
-    } else if (selectedStateFilter) {
-      setSearchQuery(selectedStateFilter);
+    } else if (stateFilter) {
+      setSearchQuery(stateFilter);
     }
-  }, [consumePuFilter, selectedStateFilter]);
+  }, [consumePuFilter, consumeStateFilter]);
 
   const candidates = electionService.getCandidates('e1');
 

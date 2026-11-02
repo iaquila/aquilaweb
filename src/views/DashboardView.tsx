@@ -17,10 +17,35 @@ import {
   AlertTriangle,
   BarChart3,
   Map,
+  Eye,
+  Landmark,
 } from 'lucide-react';
 import { NigeriaHeatMap } from '../components/NigeriaHeatMap';
 import { Card } from '../components/Card';
-import { PARTY_COLORS, BASE_VOTES_MAP } from '../constants';
+import { LiveMarquee } from '../components/LiveMarquee';
+import { PARTY_COLORS } from '../constants';
+import type { DataSource, ResultSubmission } from '../types';
+
+const isPublishedReturn = (result: ResultSubmission) =>
+  result.status === 'PUBLISHED' || result.status === 'CORRECTED';
+
+const hasInecFigures = (result: ResultSubmission) =>
+  Object.values(result.candidateVotesInec ?? {}).some((votes) => votes > 0);
+
+const candidateVotesForSource = (
+  result: ResultSubmission,
+  candidateId: string,
+  source: DataSource
+) =>
+  (source === 'INEC'
+    ? result.candidateVotesInec?.[candidateId]
+    : result.candidateVotes?.[candidateId]) ?? 0;
+
+const votesCastForSource = (result: ResultSubmission, source: DataSource) =>
+  source === 'INEC'
+    ? Object.values(result.candidateVotesInec ?? {}).reduce((sum, v) => sum + v, 0) +
+      (result.rejectedVotesInec ?? 0)
+    : result.totalVotesCast;
 
 export const DashboardView: React.FC = () => {
   const {
@@ -34,8 +59,12 @@ export const DashboardView: React.FC = () => {
     setSelectedIncidentId,
     setSelectedResultId,
     setSelectedPuFilter,
+    setSelectedStateFilter,
+    consumePuFilter,
     setEditingDraftResult,
     setActiveTab,
+    dataSource,
+    setDataSource,
   } = useAppStore();
 
   const [selectedCandidateId, setSelectedCandidateId] = useState<string>(
@@ -64,16 +93,32 @@ export const DashboardView: React.FC = () => {
     pulseTick
   );
 
+  const isFieldUser = user?.role === 'FIELD_AGENT' || user?.role === 'POLLING_AGENT';
+  const isOfficerOrAbove =
+    user?.role === 'ELECTION_OFFICER' ||
+    user?.role === 'ADMINISTRATOR' ||
+    user?.role === 'SUPER_ADMINISTRATOR';
+  const isSupervisory = !isFieldUser;
+  const activeDataSource: DataSource = isOfficerOrAbove ? dataSource : 'OBSERVED';
+  const isInecSource = activeDataSource === 'INEC';
+
+  const publishedReturns = React.useMemo(
+    () => results.filter(isPublishedReturn),
+    [results]
+  );
+  const inecCoveredReturns = React.useMemo(
+    () => publishedReturns.filter(hasInecFigures),
+    [publishedReturns]
+  );
+  const eligibleReturns = isInecSource ? inecCoveredReturns : publishedReturns;
+
   const candidateScores = React.useMemo(() => {
     let grandTotal = 0;
     const list = candidates.map((c) => {
-      const dbVotes = results.reduce(
-        (sum, r) => sum + (r.candidateVotes[c.id] || 0),
+      const votes = eligibleReturns.reduce(
+        (sum, r) => sum + candidateVotesForSource(r, c.id, activeDataSource),
         0
       );
-      const base = dbVotes > 0 ? dbVotes : (BASE_VOTES_MAP[c.id] ?? 500);
-      const pulseAdd = Math.floor(pulseTick * 18);
-      const votes = base + pulseAdd;
       grandTotal += votes;
       return { ...c, votes };
     });
@@ -81,10 +126,10 @@ export const DashboardView: React.FC = () => {
     return list
       .map((c) => ({
         ...c,
-        pct: grandTotal > 0 ? (c.votes / grandTotal) * 100 : 25,
+        pct: grandTotal > 0 ? (c.votes / grandTotal) * 100 : 0,
       }))
       .sort((a, b) => b.votes - a.votes);
-  }, [candidates, results, pulseTick]);
+  }, [candidates, eligibleReturns, activeDataSource]);
 
   const grandTotalVotes = React.useMemo(() => {
     return candidateScores.reduce((acc, c) => acc + c.votes, 0);
@@ -96,12 +141,6 @@ export const DashboardView: React.FC = () => {
   const winningCandidate = candidateScores[0];
 
   const draftSubmissions = results.filter((r) => r.status === 'DRAFT');
-  const isFieldUser = user?.role === 'FIELD_AGENT' || user?.role === 'POLLING_AGENT';
-  const isOfficerOrAbove =
-    user?.role === 'ELECTION_OFFICER' ||
-    user?.role === 'ADMINISTRATOR' ||
-    user?.role === 'SUPER_ADMINISTRATOR';
-  const isSupervisory = !isFieldUser;
 
   const roleLabel =
     user?.role === 'SUPER_ADMINISTRATOR'
@@ -153,8 +192,9 @@ export const DashboardView: React.FC = () => {
         return {
           ...pu,
           status: matching.status,
-          votes: matching.totalVotesCast,
+          votes: votesCastForSource(matching, activeDataSource),
           accredited: matching.totalAccreditedVoters,
+          hasInecDeclaration: hasInecFigures(matching),
           result: matching,
         };
       }
@@ -164,10 +204,11 @@ export const DashboardView: React.FC = () => {
         status: 'PENDING' as const,
         votes: 0,
         accredited: 0,
+        hasInecDeclaration: false,
         result: undefined,
       };
     });
-  }, [baseAssignedPus, results]);
+  }, [baseAssignedPus, results, activeDataSource]);
 
   const activePus =
     user?.role === 'POLLING_AGENT'
@@ -179,13 +220,67 @@ export const DashboardView: React.FC = () => {
   // Search autocomplete
   const searchResults = locationSearchQuery ? electionService.searchLocations(locationSearchQuery) : [];
 
+  const openResultsClean = () => {
+    setSelectedStateFilter(null);
+    consumePuFilter();
+    setActiveTab('results');
+  };
+
+  const recentResults = React.useMemo(
+    () =>
+      results
+        .filter((r) => r.status !== 'DRAFT')
+        .slice()
+        .sort(
+          (a, b) =>
+            new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime()
+        )
+        .slice(0, 8),
+    [results]
+  );
+
+  const incidentMarqueeItems = React.useMemo(
+    () =>
+      incidents.slice(0, 8).map((incident) => ({
+        id: incident.id,
+        tag: incident.category.replace(/_/g, ' '),
+        text: `@${incident.electoralArea}: ${incident.description}`,
+        meta: incident.severity,
+        tone: 'danger' as const,
+      })),
+    [incidents]
+  );
+
+  const resultMarqueeItems = React.useMemo(
+    () =>
+      recentResults.map((result) => {
+        const leader = candidates
+          .map((candidate) => ({
+            candidate,
+            votes: result.candidateVotes[candidate.id] || 0,
+          }))
+          .sort((a, b) => b.votes - a.votes)[0];
+
+        return {
+          id: result.id,
+          tag: result.status,
+          text: `${result.pollingUnitName} · ${result.totalVotesCast.toLocaleString()} votes`,
+          meta: leader
+            ? `${leader.candidate.partyAcronym} ${leader.votes.toLocaleString()}`
+            : undefined,
+          tone: 'success' as const,
+        };
+      }),
+    [recentResults, candidates]
+  );
+
   // Quick Actions Grid (Search Results / Enter Results, Incident Control, Collation Room, Locations)
   const renderQuickActions = () => (
     <div className="grid grid-cols-2 gap-2.5">
       {isSupervisory ? (
         <>
           <button
-            onClick={() => setActiveTab('results')}
+            onClick={openResultsClean}
             className="rounded-xl border border-[#1C2E24] bg-[#0E1712] p-2.5 sm:p-3 text-left hover:border-[#10B981]/50 transition group flex items-center gap-2.5 sm:gap-3"
           >
             <div className="w-8 h-8 rounded-lg bg-[#10B981]/15 text-[#10B981] flex items-center justify-center flex-shrink-0">
@@ -241,7 +336,7 @@ export const DashboardView: React.FC = () => {
       )}
 
       <button
-        onClick={() => setActiveTab('results')}
+        onClick={openResultsClean}
         className="rounded-xl border border-[#1C2E24] bg-[#0E1712] p-2.5 sm:p-3 text-left hover:border-amber-500/50 transition group flex items-center gap-2.5 sm:gap-3"
       >
         <div className="w-8 h-8 rounded-lg bg-amber-500/15 text-amber-400 flex items-center justify-center flex-shrink-0">
@@ -274,7 +369,7 @@ export const DashboardView: React.FC = () => {
       {isOfficerOrAbove ? (
         <div className="w-full rounded-xl border border-[#1C2E24] bg-[#0D6338]/[0.05] p-3 sm:p-3.5 lg:p-4 shadow-md backdrop-blur-sm">
           <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-3 sm:gap-4">
-            {/* Left Telemetry Strip (Presidential Collation + Reporting PUs + Total Tallied) */}
+            {/* Left Telemetry Strip (Presidential Collation + Active Source Total) */}
             <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-5 flex-shrink-0">
               <div className="flex items-center gap-3">
                 <div>
@@ -295,20 +390,13 @@ export const DashboardView: React.FC = () => {
               <div className="flex items-center gap-3 sm:gap-4 pt-2 sm:pt-0 border-t sm:border-t-0 border-[#1C2E24]/60">
                 <div className="text-left sm:text-right">
                   <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-[#718579] block leading-none">
-                    Reporting PUs
+                    {isInecSource ? 'INEC Declared' : 'Our Returns'}
                   </span>
-                  <span className="text-sm sm:text-base font-black text-white whitespace-nowrap">
-                    {(725 + pulseTick).toLocaleString()}
-                  </span>
-                </div>
-
-                <div className="h-6 w-px bg-[#1C2E24]" />
-
-                <div className="text-left sm:text-right">
-                  <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-[#718579] block leading-none">
-                    Total Tallied
-                  </span>
-                  <span className="text-sm sm:text-base font-black text-[#10B981] whitespace-nowrap">
+                  <span
+                    className={`text-sm sm:text-base font-black whitespace-nowrap ${
+                      isInecSource ? 'text-sky-400' : 'text-[#10B981]'
+                    }`}
+                  >
                     {grandTotalVotes.toLocaleString()}
                   </span>
                 </div>
@@ -318,7 +406,61 @@ export const DashboardView: React.FC = () => {
             <div className="hidden xl:block h-10 w-px bg-[#1C2E24]" />
 
             {/* Right: Horizontal Snapshot Performance (Candidates in dead space row) */}
-            <div className="flex-1 min-w-0">
+            <div className="flex-1 min-w-0 space-y-1.5">
+              <div className="flex items-center justify-between gap-2">
+                <span className="hidden sm:flex items-center gap-1.5 whitespace-nowrap text-[9px] font-bold uppercase tracking-wider text-[#718579]">
+                  {isInecSource ? (
+                    <Landmark className="w-3 h-3 text-sky-400" />
+                  ) : (
+                    <Eye className="w-3 h-3 text-[#10B981]" />
+                  )}
+                  {isInecSource ? 'INEC Declared' : 'Our Returns'}
+                </span>
+                <div
+                  role="group"
+                  aria-label="Dashboard data source"
+                  title="Officer control: switch dashboard figures between independent field returns and INEC declared results"
+                  className="inline-flex w-full sm:w-auto items-center p-0.5 rounded-xl bg-[#070C09] border border-[#1C2E24]"
+                >
+                  <button
+                    type="button"
+                    aria-pressed={!isInecSource}
+                    onClick={() => setDataSource('OBSERVED')}
+                    className={`flex flex-1 items-center justify-center gap-1.5 whitespace-nowrap px-2.5 py-1 rounded-lg text-[11px] font-bold transition ${
+                      !isInecSource
+                        ? 'bg-[#10B981] text-black shadow-sm'
+                        : 'text-[#94A89D] hover:text-white'
+                    }`}
+                  >
+                    <Eye className="w-3.5 h-3.5" />
+                    <span>Our Returns</span>
+                  </button>
+                  <button
+                    type="button"
+                    aria-pressed={isInecSource}
+                    onClick={() => setDataSource('INEC')}
+                    className={`flex flex-1 items-center justify-center gap-1.5 whitespace-nowrap px-2.5 py-1 rounded-lg text-[11px] font-bold transition ${
+                      isInecSource
+                        ? 'bg-sky-500 text-black shadow-sm'
+                        : 'text-[#94A89D] hover:text-white'
+                    }`}
+                  >
+                    <Landmark className="w-3.5 h-3.5" />
+                    <span>INEC Declared</span>
+                  </button>
+                </div>
+              </div>
+
+              <p
+                className={`text-[10px] ${
+                  isInecSource ? 'text-sky-400/80' : 'text-[#718579]'
+                }`}
+              >
+                {isInecSource
+                  ? `${inecCoveredReturns.length} of ${publishedReturns.length} published returns carry INEC data`
+                  : `${publishedReturns.length} published returns · drafts excluded`}
+              </p>
+
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-2.5">
                 {candidateScores.map((cand) => {
                   const rank = candidateScores.findIndex((c) => c.id === cand.id) + 1;
@@ -412,17 +554,6 @@ export const DashboardView: React.FC = () => {
               <div className="hidden sm:block h-8 w-px bg-[#1C2E24]" />
 
               <div className="flex items-center gap-3 sm:gap-4 pt-2.5 sm:pt-0 border-t sm:border-t-0 border-[#1C2E24]/60">
-                <div className="text-left sm:text-right">
-                  <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-[#718579] block leading-none">
-                    Reporting PUs
-                  </span>
-                  <span className="text-sm sm:text-base font-black text-white whitespace-nowrap">
-                    {(725 + pulseTick).toLocaleString()}
-                  </span>
-                </div>
-
-                <div className="h-6 w-px bg-[#1C2E24]" />
-
                 <div className="text-left sm:text-right">
                   <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-[#718579] block leading-none">
                     Total Tallied
@@ -550,7 +681,7 @@ export const DashboardView: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
           {/* Tactical Heat Map with reduced width */}
           <div className="transition-all duration-300 flex flex-col">
-            <NigeriaHeatMap compact />
+            <NigeriaHeatMap compact dataSource={activeDataSource} />
           </div>
 
           {/* Right Column: AI Projection Engine + Tactical Command Actions */}
@@ -945,6 +1076,15 @@ export const DashboardView: React.FC = () => {
             {activePus.map((pu) => {
               const isPub = pu.status === 'PUBLISHED';
               const isDraft = pu.status === 'DRAFT';
+              const hasDeclaration = !isInecSource || pu.hasInecDeclaration;
+              const isDeclared = isInecSource ? pu.hasInecDeclaration : isPub;
+              const displayStatus = isInecSource
+                ? pu.hasInecDeclaration
+                  ? 'DECLARED'
+                  : 'NOT DECLARED'
+                : pu.status;
+              const auditDisabled =
+                isSupervisory && (isInecSource ? !pu.hasInecDeclaration : isDraft);
 
               return (
                 <div
@@ -961,21 +1101,21 @@ export const DashboardView: React.FC = () => {
 
                     <div
                       className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold ${
-                        isPub
+                        isDeclared
                           ? 'bg-emerald-500/15 text-emerald-400'
-                          : isDraft
+                          : !isInecSource && isDraft
                           ? 'bg-amber-500/15 text-amber-400'
                           : 'bg-zinc-800 text-zinc-400'
                       }`}
                     >
-                      {isPub ? (
+                      {isDeclared ? (
                         <CheckCircle2 className="w-3.5 h-3.5" />
-                      ) : isDraft ? (
+                      ) : !isInecSource && isDraft ? (
                         <Clock className="w-3.5 h-3.5" />
                       ) : (
                         <Circle className="w-3.5 h-3.5" />
                       )}
-                      <span>{pu.status}</span>
+                      <span>{displayStatus}</span>
                     </div>
                   </div>
 
@@ -1011,16 +1151,25 @@ export const DashboardView: React.FC = () => {
 
                   <div className="flex items-center justify-between pt-2 border-t border-[#1C2E24] text-xs">
                     <span className="text-[#718579]">
-                      {isPub
-                        ? `${pu.votes} Votes tallied (${pu.accredited} accredited)`
+                      {!hasDeclaration
+                        ? pu.result
+                          ? `No INEC declaration on record · field return ${pu.status.toLowerCase()}`
+                          : 'No INEC declaration on record'
+                        : isPub
+                        ? `${pu.votes.toLocaleString()} ${
+                            isInecSource ? 'declared by INEC' : 'votes tallied'
+                          } (${pu.accredited.toLocaleString()} accredited)`
                         : isDraft
-                        ? `Draft: ${pu.votes} votes tallied (${pu.accredited} accredited)`
+                        ? `Draft: ${pu.votes.toLocaleString()} votes tallied (${pu.accredited.toLocaleString()} accredited)`
+                        : isInecSource
+                        ? `${pu.votes.toLocaleString()} declared by INEC`
                         : 'Awaiting accredited ballot entry'}
                     </span>
 
                     <button
-                      disabled={isSupervisory && isDraft}
+                      disabled={auditDisabled}
                       onClick={() => {
+                        if (auditDisabled) return;
                         if (isSupervisory || isPub) {
                           if (pu.result) {
                             setSelectedResultId(pu.result.id);
@@ -1042,15 +1191,27 @@ export const DashboardView: React.FC = () => {
                         }
                       }}
                       className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold transition ${
-                        isSupervisory && isDraft
+                        auditDisabled
                           ? 'bg-[#1C2E24] text-amber-500/50 cursor-not-allowed opacity-60'
                           : isPub || isSupervisory
                           ? 'bg-[#1C2E24] text-white hover:bg-[#253D30]'
                           : 'bg-[#10B981] text-black hover:bg-emerald-400'
                       }`}
                     >
-                      <span>{isSupervisory && isDraft ? 'Unsubmitted' : isSupervisory ? 'Audit' : isPub ? 'View' : isDraft ? 'Resume' : 'Submit'}</span>
-                      {!(isSupervisory && isDraft) && <ChevronRight className="w-3.5 h-3.5" />}
+                      <span>
+                        {auditDisabled
+                          ? isInecSource
+                            ? 'Not Declared'
+                            : 'Unsubmitted'
+                          : isSupervisory
+                          ? 'Audit'
+                          : isPub
+                          ? 'View'
+                          : isDraft
+                          ? 'Resume'
+                          : 'Submit'}
+                      </span>
+                      {!auditDisabled && <ChevronRight className="w-3.5 h-3.5" />}
                     </button>
                   </div>
                 </div>
@@ -1059,65 +1220,60 @@ export const DashboardView: React.FC = () => {
           </div>
         </Card>
 
-        {/* Right Column: Quick Actions + Field Incident Stream */}
+        {/* Right Column: Quick Actions + Live Stream */}
         <div className="space-y-6">
           {/* 6. Quick Actions Grid (For Field / Polling Agents where mid-section is hidden) */}
           {!isOfficerOrAbove && renderQuickActions()}
 
-      {/* 7. Field Incident Stream (app/(app)/(tabs)/index.tsx lines 956-986) */}
-      {incidents.length > 0 && (
-        <Card className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-base font-bold text-white">Field Incident Stream</h2>
-              <p className="text-xs text-[#718579]">
-                {incidents.length} security & logistical issues logged
-              </p>
-            </div>
-            <button
-              onClick={() => setActiveTab('incidents')}
-              className="text-xs font-bold text-[#10B981] hover:underline"
-            >
-              View All
-            </button>
-          </div>
-
-          <div className="space-y-2.5">
-            {incidents.slice(0, 3).map((inc) => (
-              <div
-                key={inc.id}
-                onClick={() => {
-                  setSelectedIncidentId(inc.id);
-                  setActiveTab('incidents');
-                }}
-                className="p-3.5 rounded-xl bg-[#070C09] border border-[#1C2E24] hover:border-red-500/40 cursor-pointer transition text-xs space-y-1.5"
-              >
-                <div className="flex items-center justify-between">
-                  <span className="font-bold text-white uppercase tracking-wider text-[11px]">
-                    {inc.category.replace(/_/g, ' ')}
-                  </span>
-                  <span
-                    className={`text-[9px] font-bold px-2 py-0.5 rounded-full ${
-                      inc.severity === 'CRITICAL'
-                        ? 'bg-red-500/20 text-red-400 border border-red-500/30'
-                        : inc.severity === 'HIGH'
-                        ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
-                        : 'bg-zinc-800 text-zinc-300'
-                    }`}
-                  >
-                    {inc.severity}
-                  </span>
+          {/* 7. Live Field Stream — incidents and returns as they arrive */}
+          {(incidentMarqueeItems.length > 0 || resultMarqueeItems.length > 0) && (
+            <Card className="space-y-3">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <h2 className="text-base font-bold text-white">Live Field Stream</h2>
+                  <p className="text-xs text-[#718579]">
+                    {incidents.length} incidents · {recentResults.length} returns logged
+                  </p>
                 </div>
-                <p className="text-[#94A89D] text-xs line-clamp-1">{inc.description}</p>
-                <div className="flex items-center justify-between text-[10px] text-[#718579] pt-1">
-                  <span>{inc.electoralArea}</span>
-                  <span>Status: {inc.status.replace(/_/g, ' ')}</span>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setActiveTab('incidents')}
+                    className="text-xs font-bold text-[#10B981] hover:underline"
+                  >
+                    Incidents
+                  </button>
+                  <button
+                    onClick={openResultsClean}
+                    className="text-xs font-bold text-[#10B981] hover:underline"
+                  >
+                    Results
+                  </button>
                 </div>
               </div>
-            ))}
-          </div>
-        </Card>
-      )}
+
+              <LiveMarquee
+                label="Incidents"
+                tone="danger"
+                items={incidentMarqueeItems}
+                ariaLabel="Live incident stream"
+                onItemClick={(id) => {
+                  setSelectedIncidentId(id);
+                  setActiveTab('incidents');
+                }}
+              />
+
+              <LiveMarquee
+                label="Returns"
+                tone="success"
+                items={resultMarqueeItems}
+                ariaLabel="Latest submitted returns"
+                onItemClick={(id) => {
+                  setSelectedResultId(id);
+                  setActiveTab('results');
+                }}
+              />
+            </Card>
+          )}
         </div>
       </div>
     </div>

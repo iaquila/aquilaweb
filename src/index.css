@@ -63,3 +63,28 @@
   animation: shimmer 1.8s infinite ease-in-out;
 }
 
+@keyframes live-marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.live-marquee-track {
+  animation: live-marquee var(--marquee-duration, 20s) linear infinite;
+  will-change: transform;
+}
+
+.live-marquee-track:hover,
+.live-marquee-track:focus-within {
+  animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .live-marquee-track {
+    animation: none;
+  }
+}
+

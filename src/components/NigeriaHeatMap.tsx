@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { useAppStore } from '../store';
 import { PARTY_COLORS } from '../constants';
+import type { DataSource } from '../types';
 import { useModalA11y } from '../hooks/useModalA11y';
 import {
   NIGERIA_MAP_VIEWBOX,
@@ -32,6 +33,7 @@ export type MapHeatMode = 'party' | 'density';
 interface NigeriaHeatMapProps {
   compact?: boolean;
   className?: string;
+  dataSource?: DataSource;
 }
 
 // ---------------------------------------------------------------------------
@@ -223,6 +225,7 @@ const DENSITY_RAMP = [
 export const NigeriaHeatMap: React.FC<NigeriaHeatMapProps> = ({
   compact = false,
   className = '',
+  dataSource = 'OBSERVED',
 }) => {
   const { results, setActiveTab, setSelectedStateFilter } = useAppStore();
 
@@ -378,8 +381,9 @@ export const NigeriaHeatMap: React.FC<NigeriaHeatMapProps> = ({
         cand4: 'PPNN',
       };
       matchingStoreResults.forEach((r) => {
-        if (r.candidateVotes) {
-          Object.entries(r.candidateVotes).forEach(([candId, count]) => {
+        const sourceVotes = dataSource === 'INEC' ? r.candidateVotesInec : r.candidateVotes;
+        if (sourceVotes) {
+          Object.entries(sourceVotes).forEach(([candId, count]) => {
             const party = candMap[candId];
             if (party && party in dynamicVotes) {
               dynamicVotes[party] += count;
@@ -426,7 +430,7 @@ export const NigeriaHeatMap: React.FC<NigeriaHeatMapProps> = ({
         shares,
       };
     });
-  }, [results]);
+  }, [results, dataSource]);
 
   // ---------------------------------------------------------------------------
   // Derived State Collation for All 37 Nigerian States and FCT
@@ -614,22 +618,22 @@ export const NigeriaHeatMap: React.FC<NigeriaHeatMapProps> = ({
             <span className="w-2 h-2 rounded-full bg-[#10B981] animate-pulse" />
             <span className="text-[11px] font-extrabold uppercase tracking-widest text-[#10B981]">
               {geoLevel === 'state'
-                ? 'FEDERATION TACTICAL CHOROPLETH'
-                : `${effectiveLgaState.toUpperCase()} DISTRICT RADAR`}
+                ? 'LIVE NATIONAL RESULTS'
+                : `${effectiveLgaState.toUpperCase()} LOCAL GOVERNMENT RESULTS`}
             </span>
           </div>
           <h2 className="text-base sm:text-lg font-black text-white mt-0.5">
             {geoLevel === 'state'
-              ? 'National Presidential Collation Map (36 States + FCT)'
-              : `${effectiveLgaState} State LGA Collation Map`}
+              ? 'National Presidential Results Map'
+              : `${effectiveLgaState} Local Government Results`}
           </h2>
           <p className="text-xs text-[#718579]">
             {geoLevel === 'state'
-              ? `All 37 Federation Administrative Hubs (${TOTAL_OFFICIAL_LGAS_COUNT} Official LGAs) · ${totalCollatedAcrossLgas.toLocaleString()} / ${totalPusAcrossLgas.toLocaleString()} PUs Collated`
-              : `${mapLgas.length} Official LGAs · ${mapLgas.reduce(
+              ? `All 36 states + FCT · ${TOTAL_OFFICIAL_LGAS_COUNT} LGAs · ${totalCollatedAcrossLgas.toLocaleString()} of ${totalPusAcrossLgas.toLocaleString()} polling units reported`
+              : `${mapLgas.length} LGAs · ${mapLgas.reduce(
                   (a, b) => a + b.baseCollated,
                   0
-                )} of ${mapLgas.reduce((a, b) => a + b.totalPus, 0)} PUs collated`}
+                )} of ${mapLgas.reduce((a, b) => a + b.totalPus, 0)} polling units reported`}
           </p>
         </div>
 
@@ -832,11 +836,11 @@ export const NigeriaHeatMap: React.FC<NigeriaHeatMapProps> = ({
             <div className="flex items-center gap-3">
               <span className="font-mono text-emerald-400 font-bold flex items-center gap-1">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                {geoLevel === 'state' ? '37 FEDERATION HUBS' : `${effectiveLgaState.toUpperCase()} LGAS`}
+                {geoLevel === 'state' ? '37 STATES REPORTING' : `${effectiveLgaState.toUpperCase()} LGAs`}
               </span>
               <span className="text-[#718579]">•</span>
               <span className="text-[#94A89D]">
-                {mapHeatMode === 'party' ? 'Choropleth: Leading Party' : 'Choropleth: Collation Progress'}
+                {mapHeatMode === 'party' ? 'Leading party' : 'Reporting progress'}
               </span>
             </div>
 
@@ -1261,15 +1265,9 @@ export const NigeriaHeatMap: React.FC<NigeriaHeatMapProps> = ({
           </div>
 
           {/* Quick Stats Ticker below Map */}
-          <div className="grid grid-cols-4 gap-2 pt-3 border-t border-[#142D1E] text-center">
+          <div className="grid grid-cols-3 gap-2 pt-3 border-t border-[#142D1E] text-center">
             <div>
-              <p className="text-[10px] text-[#718579] uppercase font-bold">Reporting PUs</p>
-              <p className="text-xs font-black text-white">
-                {totalCollatedAcrossLgas.toLocaleString()} / {totalPusAcrossLgas.toLocaleString()}
-              </p>
-            </div>
-            <div>
-              <p className="text-[10px] text-[#718579] uppercase font-bold">Collation Progress</p>
+              <p className="text-[10px] text-[#718579] uppercase font-bold">Reporting Progress</p>
               <p className="text-xs font-black text-emerald-400">{overallReportingPct}%</p>
             </div>
             <div>

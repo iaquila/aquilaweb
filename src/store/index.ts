@@ -4,6 +4,7 @@ import {
   UserRole,
   ResultSubmission,
   IncidentReport,
+  DataSource,
 } from '../types';
 import {
   INITIAL_RESULTS,
@@ -74,6 +75,12 @@ export const PREDEFINED_ACCOUNTS: PredefinedAccount[] = [
   },
 ];
 
+const officerRoles: UserRole[] = [
+  'ELECTION_OFFICER',
+  'ADMINISTRATOR',
+  'SUPER_ADMINISTRATOR',
+];
+
 interface AppState {
   // Auth
   user: User | null;
@@ -91,6 +98,10 @@ interface AppState {
   selectedElectionId: string;
   setSelectedCycleId: (id: string) => void;
   setSelectedElectionId: (id: string) => void;
+
+  // Situation Room Dashboard Data Source (officer control)
+  dataSource: DataSource;
+  setDataSource: (source: DataSource) => void;
 
   // Results & Drafts
   results: ResultSubmission[];
@@ -128,6 +139,7 @@ interface AppState {
   setSelectedCandidateDetailId: (id: string | null) => void;
   selectedStateFilter: string | null;
   setSelectedStateFilter: (state: string | null) => void;
+  consumeStateFilter: () => string | null;
   selectedPuFilter: string | null;
   setSelectedPuFilter: (pu: string | null) => void;
   consumePuFilter: () => string | null;
@@ -144,6 +156,7 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   loginWithAccount: (account) => {
     set({
+      dataSource: officerRoles.includes(account.role) ? get().dataSource : 'OBSERVED',
       user: {
         id: `u-${Date.now()}`,
         email: account.email,
@@ -162,6 +175,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     set({
       user: null,
       isAuthenticated: false,
+      dataSource: 'OBSERVED',
     });
   },
 
@@ -179,6 +193,9 @@ export const useAppStore = create<AppState>((set, get) => ({
   selectedElectionId: 'e1',
   setSelectedCycleId: (id) => set({ selectedCycleId: id }),
   setSelectedElectionId: (id) => set({ selectedElectionId: id }),
+
+  dataSource: 'OBSERVED',
+  setDataSource: (source) => set({ dataSource: source }),
 
   results: [
     ...INITIAL_RESULTS,
@@ -276,6 +293,13 @@ export const useAppStore = create<AppState>((set, get) => ({
   setSelectedCandidateDetailId: (id) => set({ selectedCandidateDetailId: id }),
   selectedStateFilter: null,
   setSelectedStateFilter: (state) => set({ selectedStateFilter: state }),
+  consumeStateFilter: () => {
+    const val = get().selectedStateFilter;
+    if (val) {
+      set({ selectedStateFilter: null });
+    }
+    return val;
+  },
   selectedPuFilter: null,
   setSelectedPuFilter: (pu) => set({ selectedPuFilter: pu }),
   consumePuFilter: () => {

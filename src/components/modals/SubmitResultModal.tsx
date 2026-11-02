@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useAppStore } from '../../store';
 import { electionService } from '../../services/electionService';
 import { ResultSubmission } from '../../types';
@@ -10,6 +10,8 @@ import {
   MapPin,
   AlertTriangle,
   Loader2,
+  Upload,
+  Sparkles,
 } from 'lucide-react';
 
 interface SubmitResultContentProps {
@@ -54,15 +56,101 @@ const SubmitResultContent: React.FC<SubmitResultContentProps> = ({
         }
   );
   const [photoAttached, setPhotoAttached] = useState<boolean>(
-    initialDraft ? !!initialDraft.evidencePhotoUrl : true
+    initialDraft ? !!initialDraft.evidencePhotoUrl : false
   );
   const [note, setNote] = useState<string>(
     initialDraft?.note || 'Form EC8A documented and verified on-site by parallel observer.'
   );
   const [validationError, setValidationError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isExtracting, setIsExtracting] = useState(false);
+  const [extractionNotice, setExtractionNotice] = useState<string | null>(null);
+  const [captureName, setCaptureName] = useState<string | null>(null);
+  const [capturePreview, setCapturePreview] = useState<string | null>(null);
+  const [captureIsImage, setCaptureIsImage] = useState<boolean>(
+    initialDraft ? !!initialDraft.evidencePhotoUrl : false
+  );
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const extractionTimerRef = useRef<number | null>(null);
+
+  useEffect(
+    () => () => {
+      if (extractionTimerRef.current) {
+        window.clearTimeout(extractionTimerRef.current);
+      }
+    },
+    []
+  );
 
   const selectedPu = allPollingUnits.find((p) => p.id === selectedPuId);
+
+  const runDemoExtraction = () => {
+    if (!selectedPu) return;
+
+    if (extractionTimerRef.current) {
+      window.clearTimeout(extractionTimerRef.current);
+    }
+
+    setIsExtracting(true);
+    setValidationError(null);
+    setExtractionNotice(null);
+
+    extractionTimerRef.current = window.setTimeout(() => {
+      const registered = selectedPu.registeredVoters ?? 700;
+      const accredited = Math.max(1, Math.round(registered * 0.84));
+      const rejected = Math.max(1, Math.round(accredited * 0.012));
+      const totalCast = Math.max(1, accredited - Math.round(accredited * 0.04));
+      const valid = Math.max(0, totalCast - rejected);
+      const shares = [0.41, 0.31, 0.21, 0.07];
+      let remaining = valid;
+      const nextVotes: Record<string, number> = {};
+
+      candidates.forEach((candidate, index) => {
+        const isLast = index === candidates.length - 1;
+        const value = isLast
+          ? remaining
+          : Math.round(valid * (shares[index] ?? 0.05));
+        nextVotes[candidate.id] = Math.max(0, value);
+        remaining -= nextVotes[candidate.id];
+      });
+
+      setAccreditedVoters(accredited);
+      setRejectedVotes(rejected);
+      setVotes(nextVotes);
+      setNote(
+        'Form EC8A captured and auto-extracted — verify figures against the uploaded sheet before publishing.'
+      );
+      setIsExtracting(false);
+      setExtractionNotice('Demo extraction complete. Verify every figure against the sheet.');
+      extractionTimerRef.current = null;
+    }, 1200);
+  };
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+
+    const isImage = file.type.startsWith('image/');
+
+    setCaptureName(file.name);
+    setCaptureIsImage(isImage);
+    setPhotoAttached(true);
+    setExtractionNotice(null);
+    setValidationError(null);
+
+    if (isImage) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        setCapturePreview(typeof reader.result === 'string' ? reader.result : null);
+      };
+      reader.readAsDataURL(file);
+    } else {
+      setCapturePreview(null);
+    }
+
+    runDemoExtraction();
+  };
 
   // Calculate sum of candidate votes
   const candidateVotesSum = Object.values(votes).reduce((a, b) => a + (b || 0), 0);
@@ -74,7 +162,7 @@ const SubmitResultContent: React.FC<SubmitResultContentProps> = ({
   };
 
   const handleSave = (isDraft: boolean) => {
-    if (isSubmitting) return;
+    if (isSubmitting || isExtracting) return;
 
     if (!selectedPu) {
       setValidationError('Please select a valid polling unit.');
@@ -114,7 +202,9 @@ const SubmitResultContent: React.FC<SubmitResultContentProps> = ({
       submittedAt: initialDraft?.submittedAt || new Date().toISOString(),
       submittedBy: userEmail || 'observer@iaquila.com.ng',
       evidencePhotoUrl: photoAttached
-        ? 'https://images.unsplash.com/photo-1540910419892-4a36d2c3266c?q=80&w=800'
+        ? capturePreview ??
+          initialDraft?.evidencePhotoUrl ??
+          'https://images.unsplash.com/photo-1540910419892-4a36d2c3266c?q=80&w=800'
         : undefined,
       note,
     };
@@ -322,36 +412,98 @@ const SubmitResultContent: React.FC<SubmitResultContentProps> = ({
             </div>
           </div>
 
-          {/* Form EC8A Photographic Proof Simulator */}
+          {/* Form EC8A Capture + Demo Extraction */}
           <div className="pt-2 border-t border-[#1C2E24] space-y-2">
             <label className="text-xs font-bold text-[#94A89D] uppercase tracking-wider block">
-              Form EC8A Result Sheet Photographic Proof
+              Form EC8A Result Sheet
             </label>
-            <div className="p-3 bg-[#070C09] border border-[#1C2E24] rounded-2xl flex items-center justify-between gap-3">
-              <div className="flex items-center gap-2.5">
-                <div className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center">
-                  <Camera className="w-5 h-5" />
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*,application/pdf"
+              capture="environment"
+              onChange={handleFileChange}
+              className="hidden"
+            />
+            <div className="p-3 bg-[#070C09] border border-[#1C2E24] rounded-2xl space-y-3">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center shrink-0">
+                    {isExtracting ? (
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                    ) : captureIsImage ? (
+                      <Camera className="w-5 h-5" />
+                    ) : (
+                      <FileText className="w-5 h-5" />
+                    )}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-xs font-semibold text-white truncate">
+                      {captureName ??
+                        (photoAttached ? 'EC8A sheet attached' : 'No EC8A sheet captured yet')}
+                    </p>
+                    <p className="text-[10px] text-[#718579]">
+                      {isExtracting
+                        ? 'Reading EC8A figures...'
+                        : captureName || photoAttached
+                        ? 'Signed sheet attached · auto-read for tally entry.'
+                        : 'Capture or upload the signed sheet to auto-fill the tallies.'}
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-xs font-semibold text-white">
-                    {photoAttached ? 'EC8A_Scan_001_Signed.jpg' : 'No photo captured yet'}
-                  </p>
-                  <p className="text-[10px] text-[#718579]">
-                    GPS and timestamp embedded automatically in EXIF metadata
-                  </p>
+                <div className="flex items-center gap-2 shrink-0">
+                  {photoAttached && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setCaptureName(null);
+                        setCapturePreview(null);
+                        setCaptureIsImage(false);
+                        setPhotoAttached(false);
+                        setExtractionNotice(null);
+                      }}
+                      className="text-[10px] font-bold text-[#718579] hover:text-red-400 transition"
+                    >
+                      Remove
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={isExtracting}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#15241D] text-emerald-300 border border-emerald-500/40 text-xs font-bold transition disabled:opacity-50"
+                  >
+                    {isExtracting ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    ) : (
+                      <Upload className="w-3.5 h-3.5" />
+                    )}
+                    <span>{photoAttached ? 'Replace' : 'Capture / Upload'}</span>
+                  </button>
                 </div>
               </div>
-              <button
-                type="button"
-                onClick={() => setPhotoAttached(!photoAttached)}
-                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition ${
-                  photoAttached
-                    ? 'bg-[#15241D] text-emerald-300 border border-emerald-500/40'
-                    : 'bg-emerald-500 text-black'
-                }`}
-              >
-                {photoAttached ? 'Retake Photo' : 'Capture Photo'}
-              </button>
+
+              {capturePreview && (
+                <div className="rounded-xl border border-[#1C2E24] overflow-hidden bg-[#070C09]">
+                  <img
+                    src={capturePreview}
+                    alt="EC8A sheet preview"
+                    className="w-full max-h-40 object-contain"
+                  />
+                </div>
+              )}
+
+              {extractionNotice && (
+                <p className="text-[10px] text-emerald-300/80 flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5" />
+                  {extractionNotice}
+                </p>
+              )}
+
+              <p className="text-[10px] text-[#718579]">
+                Demo extraction fills the tallies from the sheet. Swap in the EC8A OCR/Gemini
+                service for production.
+              </p>
             </div>
           </div>
 
@@ -381,7 +533,7 @@ const SubmitResultContent: React.FC<SubmitResultContentProps> = ({
           </button>
           <button
             onClick={() => handleSave(true)}
-            disabled={isSubmitting}
+            disabled={isSubmitting || isExtracting}
             className="w-full sm:w-auto px-4 py-2 rounded-xl bg-[#15241D] hover:bg-[#1C2E24] text-amber-300 border border-amber-500/30 text-xs font-bold transition flex items-center justify-center gap-1.5 disabled:opacity-50"
           >
             {isSubmitting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
@@ -389,7 +541,7 @@ const SubmitResultContent: React.FC<SubmitResultContentProps> = ({
           </button>
           <button
             onClick={() => handleSave(false)}
-            disabled={isSubmitting || totalVotesCast > accreditedVoters}
+            disabled={isSubmitting || isExtracting || totalVotesCast > accreditedVoters}
             className="w-full sm:w-auto px-5 py-2 rounded-xl bg-gradient-to-r from-[#0D6338] to-[#10B981] hover:from-[#15803D] hover:to-[#34D399] text-white text-xs font-bold transition shadow-md shadow-emerald-950/50 flex items-center justify-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isSubmitting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}

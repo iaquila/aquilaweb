@@ -145,14 +145,6 @@ export const Header: React.FC = () => {
             </>
           )}
 
-          {/* Supervisory / Management Role Indicator */}
-          {!isFieldAgent && (
-            <div className="hidden sm:flex items-center gap-1.5 px-3 py-1 rounded-xl bg-[#0E1712] border border-[#1C2E24] text-xs text-[#94A89D]">
-              <span className="w-2 h-2 rounded-full bg-emerald-400" />
-              <span className="font-semibold text-white">Supervisory Command</span>
-            </div>
-          )}
-
           {/* Role & Org Switcher Menu */}
           <div className="relative shrink-0">
             <button
