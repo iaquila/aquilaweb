@@ -100,6 +100,11 @@ export const ResultDetailModal: React.FC = () => {
               <span className="text-base font-bold text-white">
                 {result.totalAccreditedVoters}
               </span>
+              {result.accreditedVotersInec !== undefined && (
+                <span className="block text-[9px] text-[#718579] mt-0.5">
+                  INEC {result.accreditedVotersInec}
+                </span>
+              )}
             </div>
             <div className="bg-[#070C09] p-3 rounded-xl border border-[#1C2E24] text-center font-mono">
               <span className="text-[10px] text-[#718579] uppercase block mb-1">
@@ -116,13 +121,26 @@ export const ResultDetailModal: React.FC = () => {
               <span className="text-base font-bold text-red-400">
                 {result.rejectedVotes}
               </span>
+              <span className="block text-[9px] text-[#718579] mt-0.5">
+                INEC {result.rejectedVotesInec}
+              </span>
             </div>
+            {(result.cancelledVotes !== undefined || result.cancelledVotesInec !== undefined) && (
+              <div className="col-span-3 bg-[#070C09] p-3 rounded-xl border border-[#1C2E24] flex items-center justify-between gap-3 font-mono">
+                <span className="text-[10px] text-[#718579] uppercase">
+                  Cancelled / Annulled Ballots
+                </span>
+                <span className="text-xs font-bold text-amber-300">
+                  {result.cancelledVotes ?? 0} observed · {result.cancelledVotesInec ?? 0} INEC
+                </span>
+              </div>
+            )}
           </div>
 
-          {/* Side-by-side Candidate Tally Comparison (Field vs Official) */}
+          {/* Side-by-side Candidate Tally Comparison (Observed vs INEC) */}
           <div className="space-y-2">
             <h4 className="text-xs font-bold text-white uppercase tracking-wider">
-              Field Observer vs. Official Tally
+              Observed vs. INEC Record
             </h4>
 
             <div className="space-y-2">
@@ -155,11 +173,11 @@ export const ResultDetailModal: React.FC = () => {
 
                     <div className="flex items-center gap-4 text-xs">
                       <div>
-                        <span className="text-[10px] text-[#718579] block">Field</span>
+                        <span className="text-[10px] text-[#718579] block">Observed</span>
                         <span className="text-white font-bold">{fieldVal} ({pct}%)</span>
                       </div>
                       <div>
-                        <span className="text-[10px] text-[#718579] block">Official</span>
+                        <span className="text-[10px] text-[#718579] block">INEC</span>
                         <span className="text-[#94A89D]">{inecVal}</span>
                       </div>
                       <div>

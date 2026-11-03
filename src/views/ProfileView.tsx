@@ -2,6 +2,7 @@ import React from 'react';
 import { useAppStore, PREDEFINED_ACCOUNTS } from '../store';
 import { electionService } from '../services/electionService';
 import { Card } from '../components/Card';
+import { ROLE_LABELS } from '../constants';
 import {
   Star,
   CheckCircle2,
@@ -37,7 +38,7 @@ export const ProfileView: React.FC = () => {
                 <p className="text-xs text-[#718579]">{user?.email}</p>
                 <div className="mt-1 flex items-center gap-1.5">
                   <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-                    {user?.role.replace(/_/g, ' ')}
+                    {user?.role ? ROLE_LABELS[user.role] : 'Observer'}
                   </span>
                 </div>
               </div>

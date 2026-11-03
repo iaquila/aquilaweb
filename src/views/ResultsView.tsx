@@ -39,8 +39,19 @@ export const ResultsView: React.FC = () => {
 
   const candidates = electionService.getCandidates('e1');
 
+  const isFieldAgent =
+    user?.role === 'FIELD_AGENT' || user?.role === 'POLLING_AGENT';
+
+  const visibleResults = results.filter(
+    (r) =>
+      r.status !== 'DRAFT' ||
+      !isFieldAgent ||
+      !user?.assignedLocations?.length ||
+      user.assignedLocations.includes(r.pollingUnitId)
+  );
+
   // Filter results
-  const filteredResults = results.filter((r) => {
+  const filteredResults = visibleResults.filter((r) => {
     const matchesSearch =
       r.pollingUnitName.toLowerCase().includes(searchQuery.toLowerCase()) ||
       r.submittedBy.toLowerCase().includes(searchQuery.toLowerCase());
@@ -50,10 +61,7 @@ export const ResultsView: React.FC = () => {
     return matchesSearch && matchesStatus;
   });
 
-  const draftsCount = results.filter((r) => r.status === 'DRAFT').length;
-
-  const isFieldAgent =
-    user?.role === 'FIELD_AGENT' || user?.role === 'POLLING_AGENT';
+  const draftsCount = visibleResults.filter((r) => r.status === 'DRAFT').length;
 
   return (
     <div className="space-y-6 pb-12">
@@ -96,7 +104,7 @@ export const ResultsView: React.FC = () => {
             TOTAL PU RETURNS
           </span>
           <div className="flex items-baseline gap-2 mt-1">
-            <span className="text-2xl font-black text-white font-mono">{results.length}</span>
+            <span className="text-2xl font-black text-white font-mono">{visibleResults.length}</span>
             <span className="text-xs text-[#10B981] font-semibold">100% Ingestion</span>
           </div>
         </Card>
@@ -107,7 +115,7 @@ export const ResultsView: React.FC = () => {
           </span>
           <div className="flex items-baseline gap-2 mt-1">
             <span className="text-2xl font-black text-white font-mono">
-              {results.reduce((sum, r) => sum + r.totalAccreditedVoters, 0).toLocaleString()}
+              {visibleResults.reduce((sum, r) => sum + r.totalAccreditedVoters, 0).toLocaleString()}
             </span>
             <span className="text-xs text-[#718579]">BVAS verified</span>
           </div>
@@ -119,7 +127,7 @@ export const ResultsView: React.FC = () => {
           </span>
           <div className="flex items-baseline gap-2 mt-1">
             <span className="text-2xl font-black text-[#10B981] font-mono">
-              {results.reduce((sum, r) => sum + r.totalVotesCast, 0).toLocaleString()}
+              {visibleResults.reduce((sum, r) => sum + r.totalVotesCast, 0).toLocaleString()}
             </span>
             <span className="text-xs text-[#10B981] font-semibold">Valid</span>
           </div>
@@ -132,7 +140,7 @@ export const ResultsView: React.FC = () => {
           <div className="flex items-baseline gap-2 mt-1">
             <span className="text-2xl font-black text-amber-400 font-mono">
               {
-                results.filter((r) => {
+                visibleResults.filter((r) => {
                   if (r.status !== 'PUBLISHED') return false;
                   return candidates.some(
                     (c) =>

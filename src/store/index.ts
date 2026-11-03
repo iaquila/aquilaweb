@@ -237,8 +237,6 @@ export const useAppStore = create<AppState>((set, get) => ({
               ...r,
               status: 'PUBLISHED',
               submittedAt: new Date().toISOString(),
-              candidateVotesInec: { ...r.candidateVotes },
-              rejectedVotesInec: r.rejectedVotes,
             }
           : r
       ),

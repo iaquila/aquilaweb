@@ -12,7 +12,15 @@ import {
   Loader2,
   Upload,
   Sparkles,
+  Lock,
 } from 'lucide-react';
+
+const DEFAULT_OBSERVED_VOTES: Record<string, number> = {
+  cand1: 260,
+  cand2: 195,
+  cand3: 140,
+  cand4: 42,
+};
 
 interface SubmitResultContentProps {
   onClose: () => void;
@@ -21,6 +29,7 @@ interface SubmitResultContentProps {
   userEmail?: string;
   assignedLocations?: string[];
   initialDraft?: ResultSubmission | null;
+  isPollingAgent?: boolean;
 }
 
 const SubmitResultContent: React.FC<SubmitResultContentProps> = ({
@@ -30,6 +39,7 @@ const SubmitResultContent: React.FC<SubmitResultContentProps> = ({
   userEmail,
   assignedLocations,
   initialDraft,
+  isPollingAgent = false,
 }) => {
   useModalA11y({ isOpen: true, onClose });
 
@@ -42,18 +52,28 @@ const SubmitResultContent: React.FC<SubmitResultContentProps> = ({
   const [accreditedVoters, setAccreditedVoters] = useState<number>(
     initialDraft?.totalAccreditedVoters ?? 650
   );
+  const [accreditedInec, setAccreditedInec] = useState<number>(
+    initialDraft ? initialDraft.accreditedVotersInec ?? 0 : 650
+  );
   const [rejectedVotes, setRejectedVotes] = useState<number>(
     initialDraft?.rejectedVotes ?? 8
+  );
+  const [rejectedInec, setRejectedInec] = useState<number>(
+    initialDraft ? initialDraft.rejectedVotesInec ?? 0 : 8
+  );
+  const [cancelledVotes, setCancelledVotes] = useState<number>(
+    initialDraft?.cancelledVotes ?? 0
+  );
+  const [cancelledInec, setCancelledInec] = useState<number>(
+    initialDraft?.cancelledVotesInec ?? 0
   );
   const [votes, setVotes] = useState<Record<string, number>>(
     initialDraft?.candidateVotes
       ? { ...initialDraft.candidateVotes }
-      : {
-          cand1: 260,
-          cand2: 195,
-          cand3: 140,
-          cand4: 42,
-        }
+      : { ...DEFAULT_OBSERVED_VOTES }
+  );
+  const [inecVotes, setInecVotes] = useState<Record<string, number>>(
+    initialDraft ? { ...initialDraft.candidateVotesInec } : { ...DEFAULT_OBSERVED_VOTES }
   );
   const [photoAttached, setPhotoAttached] = useState<boolean>(
     initialDraft ? !!initialDraft.evidencePhotoUrl : false
@@ -82,7 +102,9 @@ const SubmitResultContent: React.FC<SubmitResultContentProps> = ({
     []
   );
 
-  const selectedPu = allPollingUnits.find((p) => p.id === selectedPuId);
+  const lockedPuId = isPollingAgent ? assignedLocations?.[0] ?? defaultPuId : null;
+  const effectivePuId = lockedPuId ?? selectedPuId;
+  const selectedPu = allPollingUnits.find((p) => p.id === effectivePuId);
 
   const runDemoExtraction = () => {
     if (!selectedPu) return;
@@ -115,8 +137,13 @@ const SubmitResultContent: React.FC<SubmitResultContentProps> = ({
       });
 
       setAccreditedVoters(accredited);
+      setAccreditedInec(accredited);
       setRejectedVotes(rejected);
+      setRejectedInec(rejected);
+      setCancelledVotes(0);
+      setCancelledInec(0);
       setVotes(nextVotes);
+      setInecVotes({ ...nextVotes });
       setNote(
         'Form EC8A captured and auto-extracted — verify figures against the uploaded sheet before publishing.'
       );
@@ -152,28 +179,60 @@ const SubmitResultContent: React.FC<SubmitResultContentProps> = ({
     runDemoExtraction();
   };
 
-  // Calculate sum of candidate votes
-  const candidateVotesSum = Object.values(votes).reduce((a, b) => a + (b || 0), 0);
-  const totalVotesCast = candidateVotesSum + rejectedVotes;
+  // Ballot accounting: observed field count vs what INEC's uploaded record says.
+  const observedVoteTotal = Object.values(votes).reduce((sum, value) => sum + (value || 0), 0);
+  const inecVoteTotal = Object.values(inecVotes).reduce((sum, value) => sum + (value || 0), 0);
+  const ballotsCastObserved = observedVoteTotal + rejectedVotes;
+  const ballotsCastInec = inecVoteTotal + rejectedInec;
+  const unaccountedObserved =
+    accreditedVoters - (observedVoteTotal + rejectedVotes + cancelledVotes);
+  const exceedsAccredited = accreditedVoters > 0 && ballotsCastObserved > accreditedVoters;
+  const accreditationOverdrawn = accreditedVoters > 0 && unaccountedObserved < 0;
+  const ballotIntegrityOk = !exceedsAccredited && !accreditationOverdrawn;
+  const totalVotesCast = ballotsCastObserved;
 
-  const handleVoteChange = (candidateId: string, val: string) => {
+  const handleVoteChange = (
+    candidateId: string,
+    source: 'observed' | 'inec',
+    val: string
+  ) => {
     const num = parseInt(val, 10) || 0;
-    setVotes((prev) => ({ ...prev, [candidateId]: num }));
+    if (source === 'inec') {
+      setInecVotes((prev) => ({ ...prev, [candidateId]: num }));
+    } else {
+      setVotes((prev) => ({ ...prev, [candidateId]: num }));
+    }
+  };
+
+  const handleAutoMatchInec = () => {
+    setInecVotes({ ...votes });
+    setAccreditedInec(accreditedVoters);
+    setRejectedInec(rejectedVotes);
+    setCancelledInec(cancelledVotes);
   };
 
   const handleSave = (isDraft: boolean) => {
     if (isSubmitting || isExtracting) return;
 
-    if (!selectedPu) {
+    if (!selectedPu || !effectivePuId) {
       setValidationError('Please select a valid polling unit.');
       return;
     }
 
-    if (totalVotesCast > accreditedVoters) {
-      setValidationError(
-        `Critical Validation Error: Total votes cast (${totalVotesCast}) cannot exceed accredited voters (${accreditedVoters}). Please verify tallies.`
-      );
-      return;
+    setValidationError(null);
+
+    if (!isDraft) {
+      if (accreditedVoters === 0) {
+        setValidationError('Enter the total accredited voter count from BVAS.');
+        return;
+      }
+
+      if (!ballotIntegrityOk) {
+        const proceed = window.confirm(
+          `Ballot accounting mismatch: ${ballotsCastObserved} cast against ${accreditedVoters} accredited. Publish anyway for collation audit?`
+        );
+        if (!proceed) return;
+      }
     }
 
     setIsSubmitting(true);
@@ -181,20 +240,16 @@ const SubmitResultContent: React.FC<SubmitResultContentProps> = ({
     const newResult: ResultSubmission = {
       id: initialDraft?.id || `r-${Date.now()}`,
       electionId: 'e1',
-      pollingUnitId: selectedPu.id,
+      pollingUnitId: effectivePuId,
       pollingUnitName: selectedPu.name,
       candidateVotes: { ...votes },
-      candidateVotesInec: isDraft
-        ? { cand1: 0, cand2: 0, cand3: 0, cand4: 0 }
-        : {
-            cand1: votes.cand1 || 0,
-            cand2: votes.cand2 || 0,
-            cand3: votes.cand3 || 0,
-            cand4: votes.cand4 || 0,
-          },
+      candidateVotesInec: { ...inecVotes },
       rejectedVotes,
-      rejectedVotesInec: isDraft ? 0 : rejectedVotes,
+      rejectedVotesInec: rejectedInec,
       totalAccreditedVoters: accreditedVoters,
+      accreditedVotersInec: accreditedInec,
+      cancelledVotes,
+      cancelledVotesInec: cancelledInec,
       totalVotesCast,
       status: isDraft ? 'DRAFT' : 'PUBLISHED',
       latitude: selectedPu.latitude || 6.55,
@@ -255,82 +310,188 @@ const SubmitResultContent: React.FC<SubmitResultContentProps> = ({
         )}
 
         <div className="space-y-4 max-h-[65vh] overflow-y-auto pr-1">
-          {/* Polling Unit Selector */}
+          {/* Polling Unit */}
           <div>
             <label className="text-xs font-bold text-[#94A89D] uppercase tracking-wider block mb-1.5">
-              Select Polling Unit:
+              {isPollingAgent ? 'Assigned Polling Unit:' : 'Select Polling Unit:'}
             </label>
-            <select
-              value={selectedPuId}
-              onChange={(e) => setSelectedPuId(e.target.value)}
-              className="w-full bg-[#070C09] border border-[#1C2E24] rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500"
-            >
-              {allPollingUnits.map((pu) => {
-                const isAssigned = assignedLocations?.includes(pu.id);
-                return (
-                  <option key={pu.id} value={pu.id}>
-                    {isAssigned ? '★ [Assigned] ' : ''}
-                    {pu.name} ({pu.code})
-                  </option>
-                );
-              })}
-            </select>
-            {selectedPu && (
-              <p className="text-[11px] text-[#718579] mt-1 flex items-center gap-1">
-                <MapPin className="w-3 h-3 text-emerald-400" />
-                {selectedPu.wardName} • {selectedPu.lgaName}, {selectedPu.stateName}
-              </p>
+            {isPollingAgent ? (
+              <div className="p-3 bg-[#070C09] border border-[#1C2E24] rounded-xl flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center shrink-0">
+                  <MapPin className="w-4 h-4" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-xs font-bold text-white truncate">
+                    {selectedPu?.name ?? 'Assigned Polling Unit'}
+                  </p>
+                  <p className="text-[10px] text-[#718579] truncate">
+                    {selectedPu
+                      ? `${selectedPu.code} · ${selectedPu.wardName} · ${selectedPu.lgaName}, ${selectedPu.stateName}`
+                      : 'Polling unit details unavailable'}
+                  </p>
+                </div>
+                <span className="ml-auto inline-flex items-center gap-1 text-[9px] font-bold uppercase tracking-wider text-emerald-300 px-2 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/30 shrink-0">
+                  <Lock className="w-3 h-3" />
+                  Locked
+                </span>
+              </div>
+            ) : (
+              <>
+                <select
+                  value={selectedPuId}
+                  onChange={(e) => setSelectedPuId(e.target.value)}
+                  className="w-full bg-[#070C09] border border-[#1C2E24] rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500"
+                >
+                  {allPollingUnits.map((pu) => {
+                    const isAssigned = assignedLocations?.includes(pu.id);
+                    return (
+                      <option key={pu.id} value={pu.id}>
+                        {isAssigned ? '★ [Assigned] ' : ''}
+                        {pu.name} ({pu.code})
+                      </option>
+                    );
+                  })}
+                </select>
+                {selectedPu && (
+                  <p className="text-[11px] text-[#718579] mt-1 flex items-center gap-1">
+                    <MapPin className="w-3 h-3 text-emerald-400" />
+                    {selectedPu.wardName} • {selectedPu.lgaName}, {selectedPu.stateName}
+                  </p>
+                )}
+              </>
             )}
           </div>
 
-          {/* Accreditation Figures */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {/* Ballot Accounting: observed field count vs INEC record */}
+          <div className="space-y-3 pt-2 border-t border-[#1C2E24]">
             <div>
-              <label className="text-xs font-bold text-[#94A89D] block mb-1">
-                Total Accredited Voters (BVAS count):
-              </label>
-              <input
-                type="number"
-                min="0"
-                value={accreditedVoters}
-                onChange={(e) => setAccreditedVoters(parseInt(e.target.value, 10) || 0)}
-                className="w-full bg-[#070C09] border border-[#1C2E24] rounded-xl px-3 py-2 text-sm font-mono text-white focus:outline-none focus:border-emerald-500"
-              />
+              <span className="text-xs font-bold text-white uppercase tracking-wider block">
+                Observed vs. INEC Record
+              </span>
+              <span className="text-[10px] text-[#718579]">
+                Ballot accounting — left is what your agent observed, right is what INEC recorded.
+              </span>
             </div>
-            <div>
-              <label className="text-xs font-bold text-[#94A89D] block mb-1">
-                Rejected / Void Ballots:
-              </label>
-              <input
-                type="number"
-                min="0"
-                value={rejectedVotes}
-                onChange={(e) => setRejectedVotes(parseInt(e.target.value, 10) || 0)}
-                className="w-full bg-[#070C09] border border-[#1C2E24] rounded-xl px-3 py-2 text-sm font-mono text-white focus:outline-none focus:border-emerald-500"
-              />
+
+            <div className="grid grid-cols-2 gap-3 text-[9px] font-bold uppercase tracking-wider text-[#718579]">
+              <span>Observed</span>
+              <span>INEC Record</span>
+            </div>
+
+            {[
+              {
+                label: 'Accredited',
+                observed: accreditedVoters,
+                inec: accreditedInec,
+                onObserved: setAccreditedVoters,
+                onInec: setAccreditedInec,
+              },
+              {
+                label: 'Rejected',
+                observed: rejectedVotes,
+                inec: rejectedInec,
+                onObserved: setRejectedVotes,
+                onInec: setRejectedInec,
+              },
+              {
+                label: 'Cancelled',
+                observed: cancelledVotes,
+                inec: cancelledInec,
+                onObserved: setCancelledVotes,
+                onInec: setCancelledInec,
+              },
+            ].map((row) => (
+              <div key={row.label} className="grid grid-cols-2 gap-3">
+                <label className="block">
+                  <span className="text-[10px] text-[#718579] block mb-1">{row.label}</span>
+                  <input
+                    type="number"
+                    min="0"
+                    value={row.observed}
+                    onChange={(e) => row.onObserved(parseInt(e.target.value, 10) || 0)}
+                    className="w-full bg-[#070C09] border border-[#1C2E24] rounded-xl px-3 py-2 text-sm font-mono text-white focus:outline-none focus:border-emerald-500"
+                  />
+                </label>
+                <label className="block">
+                  <span className="text-[10px] text-[#718579] block mb-1">{row.label}</span>
+                  <input
+                    type="number"
+                    min="0"
+                    value={row.inec}
+                    onChange={(e) => row.onInec(parseInt(e.target.value, 10) || 0)}
+                    className="w-full bg-[#070C09] border border-[#1C2E24] rounded-xl px-3 py-2 text-sm font-mono text-white focus:outline-none focus:border-emerald-500"
+                  />
+                </label>
+              </div>
+            ))}
+
+            <div className="rounded-xl border border-[#1C2E24] bg-[#070C09] p-3 space-y-2">
+              <div className="grid grid-cols-[1fr_auto_auto] gap-3 text-[9px] font-bold uppercase tracking-wider text-[#718579]">
+                <span>Derived</span>
+                <span className="text-right">Observed</span>
+                <span className="text-right">INEC</span>
+              </div>
+              <div className="grid grid-cols-[1fr_auto_auto] gap-3 text-xs">
+                <span className="text-[#94A89D]">Valid votes (sum of candidates)</span>
+                <span className="font-mono font-bold text-white text-right">
+                  {observedVoteTotal.toLocaleString()}
+                </span>
+                <span className="font-mono font-bold text-emerald-400 text-right">
+                  {inecVoteTotal.toLocaleString()}
+                </span>
+              </div>
+              <div className="grid grid-cols-[1fr_auto_auto] gap-3 text-xs border-t border-[#1C2E24] pt-2">
+                <span className="text-[#94A89D]">Total ballots cast</span>
+                <span className="font-mono font-bold text-white text-right">
+                  {ballotsCastObserved.toLocaleString()}
+                </span>
+                <span className="font-mono font-bold text-emerald-400 text-right">
+                  {ballotsCastInec.toLocaleString()}
+                </span>
+              </div>
+              <div className="grid grid-cols-[1fr_auto_auto] gap-3 text-xs border-t border-[#1C2E24] pt-2">
+                <span className="text-[#94A89D]">Accredited, no ballot cast</span>
+                <span
+                  className={`font-mono font-bold text-right ${
+                    unaccountedObserved < 0 ? 'text-red-400' : 'text-white'
+                  }`}
+                >
+                  {unaccountedObserved.toLocaleString()}
+                </span>
+                <span className="font-mono font-bold text-[#718579] text-right">—</span>
+              </div>
             </div>
           </div>
 
           {/* Candidate Votes Breakdown & Real-Time Tally Meter */}
           <div className="space-y-3 pt-2 border-t border-[#1C2E24]">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
               <label className="text-xs font-bold text-white uppercase tracking-wider">
-                Recorded Candidate Votes Cast
+                Candidate Ballots Tally
               </label>
-              <span className="text-xs font-mono text-[#718579]">
-                Valid: <strong className="text-white">{candidateVotesSum}</strong> | Total Cast:{' '}
-                <strong className={totalVotesCast > accreditedVoters ? 'text-red-400' : 'text-emerald-400'}>
-                  {totalVotesCast}
-                </strong>
-              </span>
+              <div className="flex items-center gap-3">
+                <span className="text-xs font-mono text-[#718579]">
+                  Valid: <strong className="text-white">{observedVoteTotal}</strong> | Total Cast:{' '}
+                  <strong className={exceedsAccredited ? 'text-red-400' : 'text-emerald-400'}>
+                    {ballotsCastObserved}
+                  </strong>
+                </span>
+                <button
+                  type="button"
+                  onClick={handleAutoMatchInec}
+                  className="px-2.5 py-1 rounded-lg bg-[#15241D] border border-[#1C2E24] text-[10px] font-bold text-emerald-300 hover:border-emerald-500/40 transition shrink-0"
+                >
+                  Match INEC
+                </button>
+              </div>
             </div>
 
             {/* Real-Time Form Tally Validation Meter */}
             <div
               className={`rounded-xl border p-3 bg-[#070C09] space-y-2 transition-all duration-300 ${
-                totalVotesCast > accreditedVoters
+                exceedsAccredited || accreditationOverdrawn
                   ? 'border-red-500/60 bg-red-950/20'
-                  : totalVotesCast === accreditedVoters
+                  : ballotsCastObserved === accreditedVoters
                   ? 'border-emerald-500/60 bg-emerald-950/20'
                   : 'border-[#1C2E24]'
               }`}
@@ -340,23 +501,25 @@ const SubmitResultContent: React.FC<SubmitResultContentProps> = ({
                   <span>Accreditation Balance</span>
                   <span
                     className={`px-1.5 py-0.5 rounded text-[9px] font-black ${
-                      totalVotesCast > accreditedVoters
+                      exceedsAccredited || accreditationOverdrawn
                         ? 'bg-red-500/20 text-red-400 border border-red-500/40 animate-pulse'
-                        : totalVotesCast === accreditedVoters
+                        : ballotsCastObserved === accreditedVoters
                         ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40'
                         : 'bg-zinc-800 text-zinc-300'
                     }`}
                   >
-                    {totalVotesCast > accreditedVoters
-                      ? `EXCEEDED BY ${(totalVotesCast - accreditedVoters).toLocaleString()}`
-                      : totalVotesCast === accreditedVoters
+                    {exceedsAccredited
+                      ? `EXCEEDED BY ${(ballotsCastObserved - accreditedVoters).toLocaleString()}`
+                      : accreditationOverdrawn
+                      ? 'INTEGRITY MISMATCH'
+                      : ballotsCastObserved === accreditedVoters
                       ? '100% RECONCILED'
-                      : `${(accreditedVoters - totalVotesCast).toLocaleString()} BALLOTS REMAINING`}
+                      : `${(accreditedVoters - ballotsCastObserved).toLocaleString()} BALLOTS REMAINING`}
                   </span>
                 </span>
                 <span className="font-mono text-xs text-[#94A89D]">
-                  <strong className={totalVotesCast > accreditedVoters ? 'text-red-400' : 'text-white'}>
-                    {totalVotesCast.toLocaleString()}
+                  <strong className={exceedsAccredited ? 'text-red-400' : 'text-white'}>
+                    {ballotsCastObserved.toLocaleString()}
                   </strong>
                   {' / '}
                   <span className="text-[#718579]">{accreditedVoters.toLocaleString()}</span>
@@ -368,11 +531,11 @@ const SubmitResultContent: React.FC<SubmitResultContentProps> = ({
                 <div
                   className="h-1.5 rounded-full transition-all duration-300"
                   style={{
-                    width: `${Math.min(100, accreditedVoters > 0 ? (totalVotesCast / accreditedVoters) * 100 : 0)}%`,
+                    width: `${Math.min(100, accreditedVoters > 0 ? (ballotsCastObserved / accreditedVoters) * 100 : 0)}%`,
                     backgroundColor:
-                      totalVotesCast > accreditedVoters
+                      exceedsAccredited || accreditationOverdrawn
                         ? '#EF4444'
-                        : totalVotesCast === accreditedVoters
+                        : ballotsCastObserved === accreditedVoters
                         ? '#10B981'
                         : '#34D399',
                   }}
@@ -384,7 +547,7 @@ const SubmitResultContent: React.FC<SubmitResultContentProps> = ({
               {candidates.map((cand) => (
                 <div
                   key={cand.id}
-                  className="bg-[#070C09] border border-[#1C2E24] p-3 rounded-xl flex items-center justify-between gap-2"
+                  className="bg-[#070C09] border border-[#1C2E24] p-3 rounded-xl space-y-2"
                 >
                   <div className="flex items-center gap-2">
                     <span
@@ -400,13 +563,32 @@ const SubmitResultContent: React.FC<SubmitResultContentProps> = ({
                       </span>
                     </div>
                   </div>
-                  <input
-                    type="number"
-                    min="0"
-                    value={votes[cand.id] ?? 0}
-                    onChange={(e) => handleVoteChange(cand.id, e.target.value)}
-                    className="w-24 bg-[#0E1712] border border-[#1C2E24] rounded-lg px-2.5 py-1 text-sm font-mono text-right text-white focus:outline-none focus:border-emerald-500 font-bold"
-                  />
+                  <div className="grid grid-cols-2 gap-2">
+                    <label className="block">
+                      <span className="text-[9px] font-bold uppercase tracking-wider text-[#718579] block mb-1">
+                        Observed
+                      </span>
+                      <input
+                        type="number"
+                        min="0"
+                        value={votes[cand.id] ?? 0}
+                        onChange={(e) => handleVoteChange(cand.id, 'observed', e.target.value)}
+                        className="w-full bg-[#0E1712] border border-[#1C2E24] rounded-lg px-2.5 py-1 text-sm font-mono text-right text-white focus:outline-none focus:border-emerald-500 font-bold"
+                      />
+                    </label>
+                    <label className="block">
+                      <span className="text-[9px] font-bold uppercase tracking-wider text-[#718579] block mb-1">
+                        INEC
+                      </span>
+                      <input
+                        type="number"
+                        min="0"
+                        value={inecVotes[cand.id] ?? 0}
+                        onChange={(e) => handleVoteChange(cand.id, 'inec', e.target.value)}
+                        className="w-full bg-[#0E1712] border border-[#1C2E24] rounded-lg px-2.5 py-1 text-sm font-mono text-right text-white focus:outline-none focus:border-emerald-500 font-bold"
+                      />
+                    </label>
+                  </div>
                 </div>
               ))}
             </div>
@@ -541,7 +723,7 @@ const SubmitResultContent: React.FC<SubmitResultContentProps> = ({
           </button>
           <button
             onClick={() => handleSave(false)}
-            disabled={isSubmitting || isExtracting || totalVotesCast > accreditedVoters}
+            disabled={isSubmitting || isExtracting}
             className="w-full sm:w-auto px-5 py-2 rounded-xl bg-gradient-to-r from-[#0D6338] to-[#10B981] hover:from-[#15803D] hover:to-[#34D399] text-white text-xs font-bold transition shadow-md shadow-emerald-950/50 flex items-center justify-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isSubmitting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
@@ -599,6 +781,7 @@ export const SubmitResultModal: React.FC = () => {
       userEmail={user?.email}
       assignedLocations={user?.assignedLocations}
       initialDraft={editingDraftResult}
+      isPollingAgent={user?.role === 'POLLING_AGENT'}
     />
   );
 };

@@ -20,6 +20,7 @@ export const DraftsQueueModal: React.FC = () => {
     deleteResult,
     setEditingDraftResult,
     setSubmitResultOpen,
+    user,
   } = useAppStore();
 
   useModalA11y({
@@ -29,7 +30,16 @@ export const DraftsQueueModal: React.FC = () => {
 
   if (!isDraftsQueueOpen) return null;
 
-  const drafts = results.filter((r) => r.status === 'DRAFT');
+  const isFieldAgent =
+    user?.role === 'FIELD_AGENT' || user?.role === 'POLLING_AGENT';
+
+  const drafts = results.filter(
+    (r) =>
+      r.status === 'DRAFT' &&
+      (!isFieldAgent ||
+        !user?.assignedLocations?.length ||
+        user.assignedLocations.includes(r.pollingUnitId))
+  );
   const candidates = electionService.getCandidates('e1');
 
   return (

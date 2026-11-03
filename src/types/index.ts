@@ -120,6 +120,9 @@ export interface ResultSubmission {
   rejectedVotes: number;
   rejectedVotesInec: number;
   totalAccreditedVoters: number;
+  accreditedVotersInec?: number;
+  cancelledVotes?: number;
+  cancelledVotesInec?: number;
   totalVotesCast: number;
   status: ResultStatus;
   latitude?: number;

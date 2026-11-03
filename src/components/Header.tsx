@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useAppStore, PREDEFINED_ACCOUNTS } from '../store';
+import { ROLE_LABELS } from '../constants';
 import { useDebouncedCallback } from '../hooks/useDebounce';
 import {
   FileText,
@@ -25,10 +26,16 @@ export const Header: React.FC = () => {
   const handleOpenDrafts = useDebouncedCallback(() => setDraftsQueueOpen(true), 300);
   const handleLogoClick = useDebouncedCallback(() => setActiveTab('dashboard'), 300);
 
-  const draftsCount = results.filter((r) => r.status === 'DRAFT').length;
-
   const isFieldAgent =
     user?.role === 'FIELD_AGENT' || user?.role === 'POLLING_AGENT';
+
+  const draftsCount = results.filter(
+    (r) =>
+      r.status === 'DRAFT' &&
+      (!isFieldAgent ||
+        !user?.assignedLocations?.length ||
+        user.assignedLocations.includes(r.pollingUnitId))
+  ).length;
 
   const roleBadgeColor =
     user?.role === 'ELECTION_OFFICER'
@@ -37,16 +44,7 @@ export const Header: React.FC = () => {
       ? 'bg-emerald-950/80 text-emerald-300 border-emerald-600/60'
       : 'bg-amber-950/80 text-amber-300 border-amber-600/60';
 
-  const roleLabel =
-    user?.role === 'SUPER_ADMINISTRATOR'
-      ? 'Super Administrator'
-      : user?.role === 'ADMINISTRATOR'
-      ? 'Administrator'
-      : user?.role === 'ELECTION_OFFICER'
-      ? 'Election Officer'
-      : user?.role === 'FIELD_AGENT'
-      ? 'Field Agent'
-      : 'Polling Unit Agent';
+  const roleLabel = user?.role ? ROLE_LABELS[user.role] : 'Observer';
 
   return (
     <header className="sticky top-0 z-40 bg-[#070C09]/95 backdrop-blur-md border-b border-[#1C2E24] px-3 sm:px-4 lg:px-8 py-2 sm:py-3">

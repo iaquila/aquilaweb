@@ -538,6 +538,8 @@ export const NigeriaHeatMap: React.FC<NigeriaHeatMapProps> = ({
     );
   }, [stateHeatmapData, selectedMapStateId]);
 
+  const activeStateGeometry = NIGERIA_STATE_GEOMETRIES[activeSelectedState.id];
+
   const totalCollatedAcrossLgas = useMemo(() => {
     return lgaHeatmapData.reduce((acc, l) => acc + l.baseCollated, 0);
   }, [lgaHeatmapData]);
@@ -844,10 +846,6 @@ export const NigeriaHeatMap: React.FC<NigeriaHeatMapProps> = ({
               </span>
             </div>
 
-            <div className="flex items-center gap-2">
-              <span className="text-[10px] text-[#34D399]/70 font-mono">GRID: NGA-WGS84</span>
-              <span className="text-[10px] font-bold text-emerald-400 font-mono">▲ N 09°04' E 08°40'</span>
-            </div>
           </div>
 
           {/* SVG Map Container */}
@@ -876,6 +874,23 @@ export const NigeriaHeatMap: React.FC<NigeriaHeatMapProps> = ({
                   <feComposite in="SourceGraphic" in2="blur" operator="over" />
                 </filter>
               </defs>
+
+              {geoLevel === 'lga' && activeStateGeometry && (
+                <g key="lga-state-backdrop" opacity={0.9} pointerEvents="none">
+                  <path
+                    d={activeStateGeometry.path}
+                    fill="#10B981"
+                    fillOpacity={0.035}
+                    stroke="#34D399"
+                    strokeOpacity={0.18}
+                    strokeWidth={2}
+                    strokeDasharray="7 5"
+                    transform={`translate(${340 - activeStateGeometry.labelX * 1.35} ${
+                      230 - activeStateGeometry.labelY * 1.35
+                    }) scale(1.35)`}
+                  />
+                </g>
+              )}
 
               {geoLevel === 'lga' ? (
                 // -----------------------------------------------------------
@@ -1651,11 +1666,23 @@ export const NigeriaHeatMap: React.FC<NigeriaHeatMapProps> = ({
                     }`}
                   >
                     <div className="flex items-start justify-between gap-2">
-                      <div>
-                        <h4 className="text-sm font-black text-white">{lga.name}</h4>
-                        <p className="text-[11px] text-[#718579] font-medium">
-                          {lga.baseCollated} of {lga.totalPus} Polling Units Collated
-                        </p>
+                      <div className="flex items-start gap-2">
+                        <div
+                          className="w-8 h-8 rounded-lg border flex items-center justify-center shrink-0"
+                          style={{
+                            backgroundColor: `${partyColor}18`,
+                            borderColor: `${partyColor}50`,
+                            color: partyColor,
+                          }}
+                        >
+                          <MapPin className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <h4 className="text-sm font-black text-white">{lga.name}</h4>
+                          <p className="text-[11px] text-[#718579] font-medium">
+                            {lga.baseCollated} of {lga.totalPus} Polling Units Collated
+                          </p>
+                        </div>
                       </div>
 
                       <span

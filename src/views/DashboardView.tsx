@@ -5,7 +5,6 @@ import {
   Sparkles,
   FileText,
   ChevronRight,
-  Trophy,
   Search,
   X,
   MapPin,
@@ -23,7 +22,7 @@ import {
 import { NigeriaHeatMap } from '../components/NigeriaHeatMap';
 import { Card } from '../components/Card';
 import { LiveMarquee } from '../components/LiveMarquee';
-import { PARTY_COLORS } from '../constants';
+import { PARTY_COLORS, ROLE_LABELS } from '../constants';
 import type { DataSource, ResultSubmission } from '../types';
 
 const isPublishedReturn = (result: ResultSubmission) =>
@@ -138,20 +137,19 @@ export const DashboardView: React.FC = () => {
   // Candidate agent is tied to
   const myCandidateId = user?.watchCandidateId ?? 'cand3';
   const myCandidate = candidateScores.find((c) => c.id === myCandidateId) ?? candidateScores[0];
-  const winningCandidate = candidateScores[0];
 
-  const draftSubmissions = results.filter((r) => r.status === 'DRAFT');
+  const draftSubmissions = results.filter(
+    (r) =>
+      r.status === 'DRAFT' &&
+      (!isFieldUser ||
+        !user?.assignedLocations?.length ||
+        user.assignedLocations.includes(r.pollingUnitId))
+  );
 
-  const roleLabel =
-    user?.role === 'SUPER_ADMINISTRATOR'
-      ? 'Super Administrator'
-      : user?.role === 'ADMINISTRATOR'
-      ? 'Administrator'
-      : user?.role === 'ELECTION_OFFICER'
-      ? 'Election Officer'
-      : user?.role === 'FIELD_AGENT'
-      ? 'Field Agent'
-      : 'Polling Unit Agent';
+  const roleLabel = user?.role ? ROLE_LABELS[user.role] : 'Observer';
+  const headerIdentityLabel = isFieldUser
+    ? roleLabel
+    : (user?.organizationName ?? 'iAQUILA Situation Room HQ').replace(/i?aquila/gi, 'iAQUILA');
 
   // Base assigned polling units cluster in Ikeja
   const baseAssignedPus = React.useMemo(() => [
@@ -335,31 +333,35 @@ export const DashboardView: React.FC = () => {
         </>
       )}
 
-      <button
-        onClick={openResultsClean}
-        className="rounded-xl border border-[#1C2E24] bg-[#0E1712] p-2.5 sm:p-3 text-left hover:border-amber-500/50 transition group flex items-center gap-2.5 sm:gap-3"
-      >
-        <div className="w-8 h-8 rounded-lg bg-amber-500/15 text-amber-400 flex items-center justify-center flex-shrink-0">
-          <BarChart3 className="w-4 h-4" />
-        </div>
-        <div className="min-w-0">
-          <p className="text-xs font-bold text-white group-hover:text-amber-400 transition truncate">Collation Room</p>
-          <p className="text-[10px] text-[#718579] truncate">Wards &amp; LGA summary</p>
-        </div>
-      </button>
+      {isSupervisory && (
+        <>
+          <button
+            onClick={openResultsClean}
+            className="rounded-xl border border-[#1C2E24] bg-[#0E1712] p-2.5 sm:p-3 text-left hover:border-amber-500/50 transition group flex items-center gap-2.5 sm:gap-3"
+          >
+            <div className="w-8 h-8 rounded-lg bg-amber-500/15 text-amber-400 flex items-center justify-center flex-shrink-0">
+              <BarChart3 className="w-4 h-4" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-xs font-bold text-white group-hover:text-amber-400 transition truncate">Collation Room</p>
+              <p className="text-[10px] text-[#718579] truncate">Wards &amp; LGA summary</p>
+            </div>
+          </button>
 
-      <button
-        onClick={() => setActiveTab('locations')}
-        className="rounded-xl border border-[#1C2E24] bg-[#0E1712] p-2.5 sm:p-3 text-left hover:border-[#10B981]/50 transition group flex items-center gap-2.5 sm:gap-3"
-      >
-        <div className="w-8 h-8 rounded-lg bg-[#10B981]/15 text-[#10B981] flex items-center justify-center flex-shrink-0">
-          <Map className="w-4 h-4" />
-        </div>
-        <div className="min-w-0">
-          <p className="text-xs font-bold text-white group-hover:text-[#10B981] transition truncate">Locations</p>
-          <p className="text-[10px] text-[#718579] truncate">National registry</p>
-        </div>
-      </button>
+          <button
+            onClick={() => setActiveTab('locations')}
+            className="rounded-xl border border-[#1C2E24] bg-[#0E1712] p-2.5 sm:p-3 text-left hover:border-[#10B981]/50 transition group flex items-center gap-2.5 sm:gap-3"
+          >
+            <div className="w-8 h-8 rounded-lg bg-[#10B981]/15 text-[#10B981] flex items-center justify-center flex-shrink-0">
+              <Map className="w-4 h-4" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-xs font-bold text-white group-hover:text-[#10B981] transition truncate">Locations</p>
+              <p className="text-[10px] text-[#718579] truncate">National registry</p>
+            </div>
+          </button>
+        </>
+      )}
     </div>
   );
 
@@ -376,11 +378,11 @@ export const DashboardView: React.FC = () => {
                   <div className="flex items-center gap-1.5">
                     <span className="w-1.5 h-1.5 rounded-full bg-[#10B981] animate-pulse" />
                     <span className="text-[10px] sm:text-[11px] font-extrabold tracking-wider text-[#10B981]">
-                      {(user?.organizationName ?? 'iAQUILA Situation Room HQ').replace(/i?aquila/gi, 'iAQUILA')}
+                      {headerIdentityLabel}
                     </span>
                   </div>
                   <h1 className="text-base sm:text-lg font-black text-white leading-tight mt-0.5 whitespace-nowrap">
-                    Presidential Collation
+                    Presidential Election
                   </h1>
                 </div>
               </div>
@@ -390,7 +392,7 @@ export const DashboardView: React.FC = () => {
               <div className="flex items-center gap-3 sm:gap-4 pt-2 sm:pt-0 border-t sm:border-t-0 border-[#1C2E24]/60">
                 <div className="text-left sm:text-right">
                   <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-[#718579] block leading-none">
-                    {isInecSource ? 'INEC Declared' : 'Our Returns'}
+                    {isInecSource ? 'INEC Declared' : 'Field Returns'}
                   </span>
                   <span
                     className={`text-sm sm:text-base font-black whitespace-nowrap ${
@@ -414,7 +416,7 @@ export const DashboardView: React.FC = () => {
                   ) : (
                     <Eye className="w-3 h-3 text-[#10B981]" />
                   )}
-                  {isInecSource ? 'INEC Declared' : 'Our Returns'}
+                  {isInecSource ? 'INEC Declared' : 'Field Returns'}
                 </span>
                 <div
                   role="group"
@@ -433,7 +435,7 @@ export const DashboardView: React.FC = () => {
                     }`}
                   >
                     <Eye className="w-3.5 h-3.5" />
-                    <span>Our Returns</span>
+                    <span>Field Returns</span>
                   </button>
                   <button
                     type="button"
@@ -542,27 +544,15 @@ export const DashboardView: React.FC = () => {
                   <div className="flex items-center gap-1.5">
                     <span className="w-1.5 h-1.5 rounded-full bg-[#10B981] animate-pulse" />
                     <span className="text-[10px] sm:text-[11px] font-extrabold tracking-wider text-[#10B981]">
-                      {(user?.organizationName ?? 'iAQUILA Situation Room HQ').replace(/i?aquila/gi, 'iAQUILA')}
+                      {headerIdentityLabel}
                     </span>
                   </div>
                   <h1 className="text-base sm:text-lg font-black text-white leading-tight mt-0.5 whitespace-nowrap">
-                    Presidential Collation
+                    Presidential Election
                   </h1>
                 </div>
               </div>
 
-              <div className="hidden sm:block h-8 w-px bg-[#1C2E24]" />
-
-              <div className="flex items-center gap-3 sm:gap-4 pt-2.5 sm:pt-0 border-t sm:border-t-0 border-[#1C2E24]/60">
-                <div className="text-left sm:text-right">
-                  <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-[#718579] block leading-none">
-                    Total Tallied
-                  </span>
-                  <span className="text-sm sm:text-base font-black text-[#10B981] whitespace-nowrap">
-                    {grandTotalVotes.toLocaleString()}
-                  </span>
-                </div>
-              </div>
             </div>
 
             {/* Right: Field Deployment Scope */}
@@ -676,7 +666,57 @@ export const DashboardView: React.FC = () => {
         </div>
       )}
 
-      {/* 2. Executive Mid-Section for Election Officer: Tactical Heat Map (Reduced Width) & AI Projection Side-by-Side */}
+      {/* 2. Live Field Stream — incidents and returns as they arrive */}
+      {(incidentMarqueeItems.length > 0 || resultMarqueeItems.length > 0) && (
+        <Card className="space-y-3">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <h2 className="text-base font-bold text-white">Live Field Stream</h2>
+              <p className="text-xs text-[#718579]">
+                {incidents.length} incidents · {recentResults.length} returns logged
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setActiveTab('incidents')}
+                className="text-xs font-bold text-[#10B981] hover:underline"
+              >
+                Incidents
+              </button>
+              <button
+                onClick={openResultsClean}
+                className="text-xs font-bold text-[#10B981] hover:underline"
+              >
+                Results
+              </button>
+            </div>
+          </div>
+
+          <LiveMarquee
+            label="Incidents"
+            tone="danger"
+            items={incidentMarqueeItems}
+            ariaLabel="Live incident stream"
+            onItemClick={(id) => {
+              setSelectedIncidentId(id);
+              setActiveTab('incidents');
+            }}
+          />
+
+          <LiveMarquee
+            label="Returns"
+            tone="success"
+            items={resultMarqueeItems}
+            ariaLabel="Latest submitted returns"
+            onItemClick={(id) => {
+              setSelectedResultId(id);
+              setActiveTab('results');
+            }}
+          />
+        </Card>
+      )}
+
+      {/* 3. Executive Mid-Section for Election Officer: Results Map & AI Projection Side-by-Side */}
       {isOfficerOrAbove && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
           {/* Tactical Heat Map with reduced width */}
@@ -953,8 +993,6 @@ export const DashboardView: React.FC = () => {
             </div>
           </div>
 
-          {/* Tactical Command Quick Actions */}
-          {renderQuickActions()}
         </div>
       </div>
     )}
@@ -966,15 +1004,9 @@ export const DashboardView: React.FC = () => {
             <div className="flex items-center gap-2">
               <h2 className="text-sm sm:text-base font-bold text-white">Snapshot Performance</h2>
               <span className="text-[11px] text-[#718579] hidden sm:inline">
-                · Live top candidates ranked by verified vote tally
+                · Top candidates ranked by verified vote tally
               </span>
             </div>
-            {winningCandidate && (
-              <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#10B981]/15 text-[#10B981] text-xs font-bold">
-                <Trophy className="w-3 h-3" />
-                <span>{winningCandidate.fullName} Leading</span>
-              </div>
-            )}
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-2.5">
@@ -1099,24 +1131,26 @@ export const DashboardView: React.FC = () => {
                       </p>
                     </div>
 
-                    <div
-                      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold ${
-                        isDeclared
-                          ? 'bg-emerald-500/15 text-emerald-400'
-                          : !isInecSource && isDraft
-                          ? 'bg-amber-500/15 text-amber-400'
-                          : 'bg-zinc-800 text-zinc-400'
-                      }`}
-                    >
-                      {isDeclared ? (
-                        <CheckCircle2 className="w-3.5 h-3.5" />
-                      ) : !isInecSource && isDraft ? (
-                        <Clock className="w-3.5 h-3.5" />
-                      ) : (
-                        <Circle className="w-3.5 h-3.5" />
-                      )}
-                      <span>{displayStatus}</span>
-                    </div>
+                    {(isInecSource || isPub || isDraft) && (
+                      <div
+                        className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold ${
+                          isDeclared
+                            ? 'bg-emerald-500/15 text-emerald-400'
+                            : !isInecSource && isDraft
+                            ? 'bg-amber-500/15 text-amber-400'
+                            : 'bg-zinc-800 text-zinc-400'
+                        }`}
+                      >
+                        {isDeclared ? (
+                          <CheckCircle2 className="w-3.5 h-3.5" />
+                        ) : !isInecSource && isDraft ? (
+                          <Clock className="w-3.5 h-3.5" />
+                        ) : (
+                          <Circle className="w-3.5 h-3.5" />
+                        )}
+                        <span>{displayStatus}</span>
+                      </div>
+                    )}
                   </div>
 
                   {/* Operational Telemetry for Single Assigned PU (Polling Agent) */}
@@ -1163,7 +1197,7 @@ export const DashboardView: React.FC = () => {
                         ? `Draft: ${pu.votes.toLocaleString()} votes tallied (${pu.accredited.toLocaleString()} accredited)`
                         : isInecSource
                         ? `${pu.votes.toLocaleString()} declared by INEC`
-                        : 'Awaiting accredited ballot entry'}
+                        : 'No ballot return submitted yet'}
                     </span>
 
                     <button
@@ -1220,60 +1254,9 @@ export const DashboardView: React.FC = () => {
           </div>
         </Card>
 
-        {/* Right Column: Quick Actions + Live Stream */}
+        {/* Right Column: Quick Actions */}
         <div className="space-y-6">
-          {/* 6. Quick Actions Grid (For Field / Polling Agents where mid-section is hidden) */}
-          {!isOfficerOrAbove && renderQuickActions()}
-
-          {/* 7. Live Field Stream — incidents and returns as they arrive */}
-          {(incidentMarqueeItems.length > 0 || resultMarqueeItems.length > 0) && (
-            <Card className="space-y-3">
-              <div className="flex items-center justify-between gap-3">
-                <div>
-                  <h2 className="text-base font-bold text-white">Live Field Stream</h2>
-                  <p className="text-xs text-[#718579]">
-                    {incidents.length} incidents · {recentResults.length} returns logged
-                  </p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => setActiveTab('incidents')}
-                    className="text-xs font-bold text-[#10B981] hover:underline"
-                  >
-                    Incidents
-                  </button>
-                  <button
-                    onClick={openResultsClean}
-                    className="text-xs font-bold text-[#10B981] hover:underline"
-                  >
-                    Results
-                  </button>
-                </div>
-              </div>
-
-              <LiveMarquee
-                label="Incidents"
-                tone="danger"
-                items={incidentMarqueeItems}
-                ariaLabel="Live incident stream"
-                onItemClick={(id) => {
-                  setSelectedIncidentId(id);
-                  setActiveTab('incidents');
-                }}
-              />
-
-              <LiveMarquee
-                label="Returns"
-                tone="success"
-                items={resultMarqueeItems}
-                ariaLabel="Latest submitted returns"
-                onItemClick={(id) => {
-                  setSelectedResultId(id);
-                  setActiveTab('results');
-                }}
-              />
-            </Card>
-          )}
+          {renderQuickActions()}
         </div>
       </div>
     </div>
