@@ -19,7 +19,7 @@ export const ProfileView: React.FC = () => {
     <div className="space-y-6 pb-12">
       {/* Title */}
       <div>
-        <h1 className="text-xl font-extrabold text-white">Observer Field Dossier &amp; Identity</h1>
+        <h1 className="text-xl font-extrabold text-white">Observer Profile &amp; Identity</h1>
         <p className="text-xs text-[#718579]">
           Accreditation credentials, assigned polling unit clusters, and non-partisan observer telemetry
         </p>

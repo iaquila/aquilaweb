@@ -19,7 +19,7 @@ import {
   Eye,
   Landmark,
 } from 'lucide-react';
-import { NigeriaHeatMap } from '../components/NigeriaHeatMap';
+import { LazyNigeriaHeatMap as NigeriaHeatMap } from '../components/LazyNigeriaHeatMap';
 import { Card } from '../components/Card';
 import { LiveMarquee } from '../components/LiveMarquee';
 import { PARTY_COLORS, ROLE_LABELS } from '../constants';
@@ -272,7 +272,7 @@ export const DashboardView: React.FC = () => {
     [recentResults, candidates]
   );
 
-  // Quick Actions Grid (Search Results / Enter Results, Incident Control, Collation Room, Locations)
+  // Quick Actions Grid (Search Results / Enter Results, Incidents, Collation, Locations)
   const renderQuickActions = () => (
     <div className="grid grid-cols-2 gap-2.5">
       {isSupervisory ? (
@@ -298,7 +298,7 @@ export const DashboardView: React.FC = () => {
               <AlertTriangle className="w-4 h-4" />
             </div>
             <div className="min-w-0">
-              <p className="text-xs font-bold text-white group-hover:text-red-400 transition truncate">Incident Control</p>
+              <p className="text-xs font-bold text-white group-hover:text-red-400 transition truncate">Incident Monitor</p>
               <p className="text-[10px] text-[#718579] truncate">Monitor &amp; triage</p>
             </div>
           </button>
@@ -327,7 +327,7 @@ export const DashboardView: React.FC = () => {
             </div>
             <div className="min-w-0">
               <p className="text-xs font-bold text-white group-hover:text-red-400 transition truncate">Report Incident</p>
-              <p className="text-[10px] text-[#718579] truncate">Live covert filing</p>
+              <p className="text-[10px] text-[#718579] truncate">Secure field report</p>
             </div>
           </button>
         </>
@@ -343,7 +343,7 @@ export const DashboardView: React.FC = () => {
               <BarChart3 className="w-4 h-4" />
             </div>
             <div className="min-w-0">
-              <p className="text-xs font-bold text-white group-hover:text-amber-400 transition truncate">Collation Room</p>
+              <p className="text-xs font-bold text-white group-hover:text-amber-400 transition truncate">Collation Summary</p>
               <p className="text-[10px] text-[#718579] truncate">Wards &amp; LGA summary</p>
             </div>
           </button>
@@ -555,14 +555,14 @@ export const DashboardView: React.FC = () => {
 
             </div>
 
-            {/* Right: Field Deployment Scope */}
+            {/* Right: Assigned Area */}
             <div className="hidden lg:flex items-center gap-3 pt-2 lg:pt-0 border-t lg:border-t-0 border-[#1C2E24]/60">
               <div className="h-8 w-px bg-[#1C2E24]" />
               <div className="flex items-center gap-2.5 px-3 py-1.5 rounded-lg bg-[#070C09]/80 border border-[#1C2E24]">
                 <div className="w-2 h-2 rounded-full bg-[#10B981] animate-pulse" />
                 <div className="text-left">
                   <div className="text-[9px] font-bold uppercase tracking-wider text-[#718579]">
-                    Assigned Scope
+                    Assigned Area
                   </div>
                   <div className="text-xs font-bold text-white flex items-center gap-1.5">
                     <span>
@@ -719,12 +719,12 @@ export const DashboardView: React.FC = () => {
       {/* 3. Executive Mid-Section for Election Officer: Results Map & AI Projection Side-by-Side */}
       {isOfficerOrAbove && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
-          {/* Tactical Heat Map with reduced width */}
+          {/* Results map */}
           <div className="transition-all duration-300 flex flex-col">
             <NigeriaHeatMap compact dataSource={activeDataSource} />
           </div>
 
-          {/* Right Column: AI Projection Engine + Tactical Command Actions */}
+          {/* Right Column: AI Projection Engine */}
           <div className="space-y-4 flex flex-col">
             {/* AI Election Projection Engine */}
             <div className="rounded-2xl border-2 border-[#10B981] bg-[#0E1712] p-5 shadow-xl flex flex-col gap-4">
@@ -1085,7 +1085,7 @@ export const DashboardView: React.FC = () => {
                 {user?.role === 'POLLING_AGENT'
                   ? 'My Assigned Polling Unit'
                   : isSupervisory
-                  ? 'Jurisdictional Collation Sample Units'
+                  ? 'Collation Sample Units'
                   : 'My Assigned Polling Units'}
               </h2>
               <p className="text-xs text-[#718579]">
@@ -1093,7 +1093,7 @@ export const DashboardView: React.FC = () => {
                   ? 'Polling Unit Agent assignment · 1 Polling Unit'
                   : isSupervisory
                   ? `${roleLabel ?? 'Supervisory'} overview · 3 Reporting Units`
-                  : 'Field Agent jurisdiction · 3 Polling Units'}
+                  : 'Field assignment · 3 Polling Units'}
               </p>
             </div>
             <button

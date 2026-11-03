@@ -49,7 +49,7 @@ const ReportIncidentContent: React.FC<ReportIncidentContentProps> = ({
           if (s >= 120) {
             // Auto-stop at 2 minutes
             setIsRecordingAudio(false);
-            setMediaUrls((m) => [...m, 'covert_audio_evidence_2min.m4a']);
+            setMediaUrls((m) => [...m, 'secure_audio_evidence_2min.m4a']);
             return 120;
           }
           return s + 1;
@@ -62,7 +62,7 @@ const ReportIncidentContent: React.FC<ReportIncidentContentProps> = ({
   const toggleRecording = () => {
     if (isRecordingAudio) {
       setIsRecordingAudio(false);
-      setMediaUrls((m) => [...m, `covert_audio_${recordSeconds}s.m4a`]);
+      setMediaUrls((m) => [...m, `secure_audio_${recordSeconds}s.m4a`]);
     } else {
       setRecordSeconds(0);
       setIsRecordingAudio(true);
@@ -260,7 +260,7 @@ const ReportIncidentContent: React.FC<ReportIncidentContentProps> = ({
                 ) : (
                   <>
                     <Mic className="w-4 h-4 text-red-400" />
-                    <span>Covert Audio (2m max)</span>
+                    <span>Secure Audio (2m max)</span>
                   </>
                 )}
               </button>

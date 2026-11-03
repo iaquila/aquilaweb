@@ -52,7 +52,7 @@ export const IncidentsView: React.FC = () => {
       {/* Title & Quick Report CTA */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-xl font-extrabold text-white">Incident Control Room</h1>
+          <h1 className="text-xl font-extrabold text-white">Field Incidents</h1>
           <p className="text-xs text-[#718579]">
             {incidents.length} total logged incidents across operational sectors
           </p>

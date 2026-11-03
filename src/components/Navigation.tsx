@@ -25,8 +25,8 @@ export const Navigation: React.FC = () => {
   const navItems = [
     {
       id: 'dashboard' as const,
-      label: 'Situation Console',
-      shortLabel: 'Console',
+      label: 'Situation Room',
+      shortLabel: 'Home',
       icon: LayoutDashboard,
     },
     {

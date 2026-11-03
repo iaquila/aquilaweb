@@ -9,7 +9,7 @@ import {
   Layers,
   Map as MapIcon,
 } from 'lucide-react';
-import { NigeriaHeatMap } from '../components/NigeriaHeatMap';
+import { LazyNigeriaHeatMap as NigeriaHeatMap } from '../components/LazyNigeriaHeatMap';
 import { Card } from '../components/Card';
 
 export const LocationsView: React.FC = () => {
