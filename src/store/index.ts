@@ -10,6 +10,7 @@ import {
   INITIAL_RESULTS,
   INITIAL_INCIDENTS,
 } from '../data/mockData';
+import { TOTAL_POLLING_UNITS } from '../constants';
 
 export interface PredefinedAccount {
   name: string;
@@ -261,7 +262,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   pulseActive: true,
   pulseTick: 124,
   pulseProcessedPus: 128450,
-  totalPus: 176846,
+  totalPus: TOTAL_POLLING_UNITS,
   togglePulse: () => set((s) => ({ pulseActive: !s.pulseActive })),
   setPulseActive: (active) => set({ pulseActive: active }),
   stepPulse: () => {

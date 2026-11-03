@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   MapPin,
   ChevronRight,
@@ -12,9 +12,12 @@ import {
   ExternalLink,
   ShieldCheck,
   CheckCircle2,
+  ZoomIn,
+  ZoomOut,
+  RotateCcw,
 } from 'lucide-react';
 import { useAppStore } from '../store';
-import { PARTY_COLORS } from '../constants';
+import { PARTY_COLORS, TOTAL_LGAS, TOTAL_POLLING_UNITS } from '../constants';
 import type { DataSource } from '../types';
 import { useModalA11y } from '../hooks/useModalA11y';
 import {
@@ -25,11 +28,23 @@ import {
 import {
   NIGERIA_LGA_GEOMETRIES,
   getLgaGeometriesForState,
-  TOTAL_LGA_COUNT,
 } from '../data/nigeriaLgaMapData';
+import { POLLING_UNITS } from '../data/mockData';
 
 export type GeoLevel = 'state' | 'lga';
-export type MapHeatMode = 'party' | 'density';
+export type MapHeatMode = 'party' | 'coverage';
+
+type ViewBox = { x: number; y: number; width: number; height: number };
+
+const parseViewBox = (value: string): ViewBox => {
+  const [x, y, width, height] = value.split(' ').map(Number);
+  return { x, y, width, height };
+};
+
+const viewBoxToString = (value: ViewBox) =>
+  `${value.x.toFixed(2)} ${value.y.toFixed(2)} ${value.width.toFixed(2)} ${value.height.toFixed(2)}`;
+
+const MIN_ZOOM_SCALE = 8;
 
 export interface NigeriaHeatMapProps {
   compact?: boolean;
@@ -69,8 +84,8 @@ export type StateCollation = {
   shares: Array<{ party: 'CPA' | 'DPP' | 'PL' | 'PPNN'; votes: number; pct: number }>;
 };
 
-// Sequential progress ramp for collation returns density
-const DENSITY_RAMP = [
+// Sequential reporting-coverage ramp
+const COVERAGE_RAMP = [
   '#092618',
   '#0E3E26',
   '#135C38',
@@ -94,8 +109,25 @@ export const NigeriaHeatMap: React.FC<NigeriaHeatMapProps> = ({
   const [selectedMapLgaId, setSelectedMapLgaId] = useState<string>('lga-lagos-ikeja');
   const [hoveredStateId, setHoveredStateId] = useState<string | null>(null);
   const [hoveredLgaId, setHoveredLgaId] = useState<string | null>(null);
+  const [showLgaLabels, setShowLgaLabels] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [inspectModalUnit, setInspectModalUnit] = useState<LgaCollation | StateCollation | null>(null);
+  const [viewBoxOverride, setViewBoxOverride] = useState<ViewBox | null>(null);
+  const mapContainerRef = useRef<HTMLDivElement>(null);
+  const pointersRef = useRef<Map<number, { x: number; y: number }>>(new Map());
+  const dragRef = useRef<{
+    pointerId: number;
+    startX: number;
+    startY: number;
+    startViewBox: ViewBox;
+    moved: boolean;
+  } | null>(null);
+  const pinchRef = useRef<{
+    startDistance: number;
+    startMidpoint: { x: number; y: number };
+    startViewBox: ViewBox;
+  } | null>(null);
+  const suppressClickRef = useRef(false);
 
   useModalA11y({
     isOpen: !!inspectModalUnit,
@@ -136,6 +168,7 @@ export const NigeriaHeatMap: React.FC<NigeriaHeatMapProps> = ({
     const allBases: Array<{
       id: string;
       name: string;
+      rawName: string;
       state: string;
       totalPus: number;
       baseCollated: number;
@@ -189,6 +222,7 @@ export const NigeriaHeatMap: React.FC<NigeriaHeatMapProps> = ({
           allBases.push({
             id: lgaGeom.id,
             name: displayName,
+            rawName: cleanName,
             state: geom.name,
             totalPus: override.totalPus,
             baseCollated: override.baseCollated,
@@ -220,6 +254,7 @@ export const NigeriaHeatMap: React.FC<NigeriaHeatMapProps> = ({
         allBases.push({
           id: lgaGeom.id,
           name: displayName,
+          rawName: cleanName,
           state: geom.name,
           totalPus: pus,
           baseCollated: collated,
@@ -233,6 +268,22 @@ export const NigeriaHeatMap: React.FC<NigeriaHeatMapProps> = ({
       });
     });
 
+    const rawPusTotal = allBases.reduce((acc, base) => acc + base.totalPus, 0);
+    const pusScale = rawPusTotal > 0 ? TOTAL_POLLING_UNITS / rawPusTotal : 1;
+    let remainingPus = TOTAL_POLLING_UNITS;
+    allBases.forEach((base, index) => {
+      if (index === allBases.length - 1) {
+        base.totalPus = Math.max(1, remainingPus);
+      } else {
+        base.totalPus = Math.max(1, Math.round(base.totalPus * pusScale));
+        remainingPus -= base.totalPus;
+      }
+      base.baseCollated = Math.min(
+        base.totalPus,
+        Math.round(base.baseCollated * pusScale)
+      );
+    });
+
     const candidateNames: Record<string, string> = {
       CPA: 'Ahmed Okwute',
       DPP: 'Abubakar Matthew',
@@ -240,12 +291,45 @@ export const NigeriaHeatMap: React.FC<NigeriaHeatMapProps> = ({
       PPNN: 'Borro Nassiru',
     };
 
+    const normalizeLgaKey = (state: string, value: string) => {
+      let key = normalizeKey(value)
+        .replace(/\b(lga|area council|council)\b/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+      if (state === 'FCT' && key === 'abuja municipal') key = 'municipal';
+      return key;
+    };
+
+    const puById = new Map(POLLING_UNITS.map((pu) => [pu.id, pu]));
+    const resultsByLga = new Map<
+      string,
+      { votes: Record<string, number>; count: number }
+    >();
+
+    results
+      .filter((r) => r.status === 'PUBLISHED' || r.status === 'CORRECTED')
+      .forEach((r) => {
+        const sourceVotes = dataSource === 'INEC' ? r.candidateVotesInec : r.candidateVotes;
+        if (dataSource === 'INEC' && !Object.values(sourceVotes ?? {}).some((v) => v > 0)) {
+          return;
+        }
+        const pu = puById.get(r.pollingUnitId);
+        if (!pu) return;
+
+        const key = `${normalizeKey(pu.stateName)}|${normalizeLgaKey(pu.stateName, pu.lgaName)}`;
+        const entry = resultsByLga.get(key) ?? { votes: {}, count: 0 };
+        Object.entries(sourceVotes ?? {}).forEach(([candId, count]) => {
+          if (typeof count === 'number' && Number.isFinite(count)) {
+            entry.votes[candId] = (entry.votes[candId] ?? 0) + count;
+          }
+        });
+        entry.count += 1;
+        resultsByLga.set(key, entry);
+      });
+
     return allBases.map((base) => {
-      const matchingStoreResults = results.filter(
-        (r) =>
-          r.status === 'PUBLISHED' &&
-          (r.pollingUnitName?.toLowerCase().includes(base.state.toLowerCase()) ||
-            r.pollingUnitName?.toLowerCase().includes(base.name.toLowerCase()))
+      const matched = resultsByLga.get(
+        `${normalizeKey(base.state)}|${normalizeLgaKey(base.state, base.rawName)}`
       );
 
       const dynamicVotes = { ...base.baseVotes };
@@ -255,17 +339,19 @@ export const NigeriaHeatMap: React.FC<NigeriaHeatMapProps> = ({
         cand3: 'PL',
         cand4: 'PPNN',
       };
-      matchingStoreResults.forEach((r) => {
-        const sourceVotes = dataSource === 'INEC' ? r.candidateVotesInec : r.candidateVotes;
-        if (sourceVotes) {
-          Object.entries(sourceVotes).forEach(([candId, count]) => {
-            const party = candMap[candId];
-            if (party && party in dynamicVotes) {
-              dynamicVotes[party] += count;
-            }
-          });
-        }
-      });
+      if (matched) {
+        Object.entries(matched.votes).forEach(([candId, count]) => {
+          const party = candMap[candId];
+          if (party && party in dynamicVotes) {
+            dynamicVotes[party] += count;
+          }
+        });
+      }
+
+      const collated = Math.min(
+        base.totalPus,
+        base.baseCollated + (matched?.count ?? 0)
+      );
 
       const totalVotes =
         (dynamicVotes.CPA || 0) +
@@ -292,16 +378,16 @@ export const NigeriaHeatMap: React.FC<NigeriaHeatMapProps> = ({
         name: base.name,
         state: base.state,
         totalPus: base.totalPus,
-        baseCollated: base.baseCollated,
+        baseCollated: collated,
         totalVotes,
         reportingPct: Math.min(
           100,
-          Number(((base.baseCollated / base.totalPus) * 100).toFixed(0))
+          Number(((collated / base.totalPus) * 100).toFixed(0))
         ),
         leadingParty: leader.party,
         leadingCandidate: candidateNames[leader.party] ?? leader.party,
         leadingPct: leader.pct.toFixed(1),
-        margin: `+${marginPct}% ahead`,
+        margin: `+${marginPct} pts ahead`,
         shares,
       };
     });
@@ -379,7 +465,7 @@ export const NigeriaHeatMap: React.FC<NigeriaHeatMapProps> = ({
           leadingParty: leader.party,
           leadingCandidate: candidateNames[leader.party] ?? leader.party,
           leadingPct: leader.pct.toFixed(1),
-          margin: `+${(leader.pct - runnerUp.pct).toFixed(1)}% lead`,
+          margin: `+${(leader.pct - runnerUp.pct).toFixed(1)} pts lead`,
           shares,
         };
       })
@@ -418,6 +504,194 @@ export const NigeriaHeatMap: React.FC<NigeriaHeatMapProps> = ({
     return parts.length === 4 && parts[3] > 0 ? parts[2] / parts[3] : 16 / 11;
   }, [geoLevel, lgaViewBox]);
 
+  const baseViewBox = useMemo(
+    () => parseViewBox(geoLevel === 'state' ? NIGERIA_MAP_VIEWBOX : lgaViewBox),
+    [geoLevel, lgaViewBox]
+  );
+  const activeViewBox = viewBoxOverride ?? baseViewBox;
+  const activeViewBoxString = viewBoxToString(activeViewBox);
+  const isZoomed = activeViewBox.width < baseViewBox.width - 0.5;
+  const canZoomIn = activeViewBox.width > baseViewBox.width / MIN_ZOOM_SCALE + 0.5;
+  const canZoomOut = isZoomed;
+
+  const clampViewBox = useCallback(
+    (next: ViewBox): ViewBox => {
+      const minWidth = baseViewBox.width / MIN_ZOOM_SCALE;
+      const width = Math.min(baseViewBox.width, Math.max(minWidth, next.width));
+      const height = width * (baseViewBox.height / baseViewBox.width);
+      return {
+        x: Math.min(
+          Math.max(next.x, baseViewBox.x),
+          baseViewBox.x + baseViewBox.width - width
+        ),
+        y: Math.min(
+          Math.max(next.y, baseViewBox.y),
+          baseViewBox.y + baseViewBox.height - height
+        ),
+        width,
+        height,
+      };
+    },
+    [baseViewBox]
+  );
+
+  const zoomAt = useCallback(
+    (factor: number, clientX?: number, clientY?: number) => {
+      const rect = mapContainerRef.current?.getBoundingClientRect();
+      const ratioX =
+        clientX !== undefined && rect ? (clientX - rect.left) / rect.width : 0.5;
+      const ratioY =
+        clientY !== undefined && rect ? (clientY - rect.top) / rect.height : 0.5;
+
+      setViewBoxOverride((currentOverride) => {
+        const current = currentOverride ?? baseViewBox;
+        const width = current.width / factor;
+        const height = width * (baseViewBox.height / baseViewBox.width);
+        return clampViewBox({
+          x: current.x + ratioX * current.width - ratioX * width,
+          y: current.y + ratioY * current.height - ratioY * height,
+          width,
+          height,
+        });
+      });
+    },
+    [baseViewBox, clampViewBox]
+  );
+
+  useEffect(() => {
+    setViewBoxOverride(null);
+    dragRef.current = null;
+    pinchRef.current = null;
+    pointersRef.current.clear();
+    suppressClickRef.current = false;
+  }, [baseViewBox]);
+
+  const handleMapPointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (event.pointerType === 'mouse' && event.button !== 0) return;
+    if (event.target instanceof Element && event.target.closest('[data-map-controls]')) {
+      return;
+    }
+
+    pointersRef.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
+    suppressClickRef.current = false;
+
+    if (pointersRef.current.size === 1) {
+      dragRef.current = {
+        pointerId: event.pointerId,
+        startX: event.clientX,
+        startY: event.clientY,
+        startViewBox: viewBoxOverride ?? baseViewBox,
+        moved: false,
+      };
+      pinchRef.current = null;
+    } else if (pointersRef.current.size === 2) {
+      const [a, b] = Array.from(pointersRef.current.values());
+      pinchRef.current = {
+        startDistance: Math.hypot(a.x - b.x, a.y - b.y),
+        startMidpoint: { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 },
+        startViewBox: viewBoxOverride ?? baseViewBox,
+      };
+      dragRef.current = null;
+      const el = mapContainerRef.current;
+      if (el) {
+        Array.from(pointersRef.current.keys()).forEach((pointerId) => {
+          if (!el.hasPointerCapture(pointerId)) el.setPointerCapture(pointerId);
+        });
+      }
+    }
+  };
+
+  const handleMapPointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (!pointersRef.current.has(event.pointerId)) return;
+    pointersRef.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
+    const rect = mapContainerRef.current?.getBoundingClientRect();
+    if (!rect) return;
+
+    if (pointersRef.current.size >= 2 && pinchRef.current) {
+      event.preventDefault();
+      const [a, b] = Array.from(pointersRef.current.values());
+      const pinch = pinchRef.current;
+      const currentDistance = Math.hypot(a.x - b.x, a.y - b.y);
+      const factor = pinch.startDistance > 0 ? currentDistance / pinch.startDistance : 1;
+      const currentMidpoint = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
+      const start = pinch.startViewBox;
+      const startMidX =
+        start.x + ((pinch.startMidpoint.x - rect.left) / rect.width) * start.width;
+      const startMidY =
+        start.y + ((pinch.startMidpoint.y - rect.top) / rect.height) * start.height;
+      const width = start.width / factor;
+      const height = width * (baseViewBox.height / baseViewBox.width);
+
+      setViewBoxOverride(
+        clampViewBox({
+          x: startMidX - ((currentMidpoint.x - rect.left) / rect.width) * width,
+          y: startMidY - ((currentMidpoint.y - rect.top) / rect.height) * height,
+          width,
+          height,
+        })
+      );
+      suppressClickRef.current = true;
+      return;
+    }
+
+    const drag = dragRef.current;
+    if (!drag || drag.pointerId !== event.pointerId) return;
+    const dx = event.clientX - drag.startX;
+    const dy = event.clientY - drag.startY;
+    if (Math.hypot(dx, dy) > 4) drag.moved = true;
+    if (!drag.moved) return;
+
+    event.preventDefault();
+    const el = mapContainerRef.current;
+    if (el && !el.hasPointerCapture(event.pointerId)) {
+      el.setPointerCapture(event.pointerId);
+    }
+    setViewBoxOverride(
+      clampViewBox({
+        x: drag.startViewBox.x - (dx / rect.width) * drag.startViewBox.width,
+        y: drag.startViewBox.y - (dy / rect.height) * drag.startViewBox.height,
+        width: drag.startViewBox.width,
+        height: drag.startViewBox.height,
+      })
+    );
+    suppressClickRef.current = true;
+  };
+
+  const handleMapPointerUp = (event: React.PointerEvent<HTMLDivElement>) => {
+    pointersRef.current.delete(event.pointerId);
+    if (dragRef.current?.pointerId === event.pointerId) {
+      if (!dragRef.current.moved) suppressClickRef.current = false;
+      dragRef.current = null;
+    }
+    if (pointersRef.current.size < 2) pinchRef.current = null;
+    const el = mapContainerRef.current;
+    if (el?.hasPointerCapture(event.pointerId)) {
+      el.releasePointerCapture(event.pointerId);
+    }
+  };
+
+  const handleMapPointerCancel = (event: React.PointerEvent<HTMLDivElement>) => {
+    pointersRef.current.delete(event.pointerId);
+    if (dragRef.current?.pointerId === event.pointerId) dragRef.current = null;
+    if (pointersRef.current.size < 2) pinchRef.current = null;
+    suppressClickRef.current = false;
+    const el = mapContainerRef.current;
+    if (el?.hasPointerCapture(event.pointerId)) {
+      el.releasePointerCapture(event.pointerId);
+    }
+  };
+
+  const handleMapClickCapture = (event: React.MouseEvent<HTMLDivElement>) => {
+    if (event.target instanceof Element && event.target.closest('[data-map-controls]')) {
+      return;
+    }
+    if (suppressClickRef.current) {
+      event.preventDefault();
+      event.stopPropagation();
+      suppressClickRef.current = false;
+    }
+  };
+
   const activeSelectedLga = useMemo(() => {
     return (
       lgaHeatmapData.find((l) => l.id === selectedMapLgaId) ??
@@ -446,19 +720,40 @@ export const NigeriaHeatMap: React.FC<NigeriaHeatMapProps> = ({
     return lgaHeatmapData.reduce((acc, l) => acc + l.totalVotes, 0);
   }, [lgaHeatmapData]);
 
-  const overallReportingPct =
-    totalPusAcrossLgas > 0
-      ? Math.round((totalCollatedAcrossLgas / totalPusAcrossLgas) * 100)
-      : 89;
+  const scopeCollated =
+    geoLevel === 'state'
+      ? totalCollatedAcrossLgas
+      : mapLgas.reduce((acc, lga) => acc + lga.baseCollated, 0);
+  const scopePus =
+    geoLevel === 'state'
+      ? totalPusAcrossLgas
+      : mapLgas.reduce((acc, lga) => acc + lga.totalPus, 0);
+  const scopeVotes =
+    geoLevel === 'state'
+      ? totalVotesAcrossAll
+      : mapLgas.reduce((acc, lga) => acc + lga.totalVotes, 0);
+  const scopeReportingPct =
+    scopePus > 0 ? Math.round((scopeCollated / scopePus) * 100) : 0;
+
+  const coverageValues =
+    geoLevel === 'state'
+      ? stateHeatmapData.map((state) => state.reportingPct)
+      : mapLgas.map((lga) => lga.reportingPct);
+  const coverageMin = coverageValues.length ? Math.min(...coverageValues) : 0;
+  const coverageMax = coverageValues.length ? Math.max(...coverageValues) : 100;
 
   // Fill color calculation based on display mode
   const getFillColor = (item: { leadingParty: 'CPA' | 'DPP' | 'PL' | 'PPNN'; reportingPct: number }) => {
-    if (mapHeatMode === 'density') {
+    if (mapHeatMode === 'coverage') {
+      const ratio =
+        coverageMax > coverageMin
+          ? (item.reportingPct - coverageMin) / (coverageMax - coverageMin)
+          : 1;
       const idx = Math.min(
-        DENSITY_RAMP.length - 1,
-        Math.floor((item.reportingPct / 100) * DENSITY_RAMP.length)
+        COVERAGE_RAMP.length - 1,
+        Math.max(0, Math.floor(ratio * COVERAGE_RAMP.length))
       );
-      return DENSITY_RAMP[idx]!;
+      return COVERAGE_RAMP[idx]!;
     }
     return PARTY_COLORS[item.leadingParty] ?? '#10B981';
   };
@@ -525,7 +820,7 @@ export const NigeriaHeatMap: React.FC<NigeriaHeatMapProps> = ({
           </h2>
           <p className="text-xs text-[#718579]">
             {geoLevel === 'state'
-              ? `All 36 states + FCT · ${TOTAL_LGA_COUNT} LGAs · ${totalCollatedAcrossLgas.toLocaleString()} of ${totalPusAcrossLgas.toLocaleString()} polling units reported`
+              ? `All 36 states + FCT · ${TOTAL_LGAS} LGAs · ${totalCollatedAcrossLgas.toLocaleString()} of ${totalPusAcrossLgas.toLocaleString()} polling units reported`
               : `${mapLgas.length} LGAs · ${mapLgas.reduce(
                   (a, b) => a + b.baseCollated,
                   0
@@ -561,7 +856,7 @@ export const NigeriaHeatMap: React.FC<NigeriaHeatMapProps> = ({
             </button>
           </div>
 
-          {/* Lead vs Progress Mode Pill Group */}
+          {/* Lead vs Coverage Mode Pill Group */}
           <div className="inline-flex items-center p-1 rounded-xl bg-[#070C09] border border-[#1C2E24]">
             <button
               onClick={() => setMapHeatMode('party')}
@@ -575,21 +870,37 @@ export const NigeriaHeatMap: React.FC<NigeriaHeatMapProps> = ({
               <span>Leading Party</span>
             </button>
             <button
-              onClick={() => setMapHeatMode('density')}
+              onClick={() => setMapHeatMode('coverage')}
               className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold transition ${
-                mapHeatMode === 'density'
+                mapHeatMode === 'coverage'
                   ? 'bg-[#10B981] text-black shadow-md shadow-emerald-950/50'
                   : 'text-[#718579] hover:text-white'
               }`}
             >
               <Flame className="w-3.5 h-3.5" />
-              <span>Returns Density</span>
+              <span>Reporting Coverage</span>
             </button>
           </div>
 
+          {geoLevel === 'lga' && (
+            <button
+              type="button"
+              onClick={() => setShowLgaLabels((prev) => !prev)}
+              aria-pressed={showLgaLabels}
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-bold transition border ${
+                showLgaLabels
+                  ? 'bg-[#10B981] text-black border-[#10B981]'
+                  : 'bg-[#070C09] text-[#718579] border-[#1C2E24] hover:text-white'
+              }`}
+            >
+              <MapPin className="w-3.5 h-3.5" />
+              <span>{showLgaLabels ? 'Hide labels' : 'Show labels'}</span>
+            </button>
+          )}
+
           {/* Overall Reporting Percentage Pill */}
           <div className="px-3 py-1 rounded-xl bg-[#10B981]/10 border border-[#10B981]/30 text-xs font-black text-[#10B981]">
-            {overallReportingPct}% COLLATED
+            {scopeReportingPct}% REPORTED
           </div>
         </div>
       </div>
@@ -736,25 +1047,95 @@ export const NigeriaHeatMap: React.FC<NigeriaHeatMapProps> = ({
               </span>
               <span className="text-[#718579]">•</span>
               <span className="text-[#94A89D]">
-                {mapHeatMode === 'party' ? 'Leading party' : 'Reporting progress'}
+                {mapHeatMode === 'party' ? 'Leading party' : 'Reporting coverage'}
               </span>
             </div>
 
+            <div className="hidden sm:flex items-center gap-2">
+              {mapHeatMode === 'party' ? (
+                <div className="flex items-center gap-2">
+                  {(['CPA', 'DPP', 'PL', 'PPNN'] as const).map((party) => (
+                    <span
+                      key={party}
+                      className="flex items-center gap-1 text-[9px] font-bold text-[#94A89D]"
+                    >
+                      <span
+                        className="w-2 h-2 rounded-sm"
+                        style={{ backgroundColor: PARTY_COLORS[party] }}
+                      />
+                      {party}
+                    </span>
+                  ))}
+                </div>
+              ) : (
+                <div className="flex items-center gap-1.5 text-[9px] font-bold text-[#94A89D]">
+                  <span>{Math.round(coverageMin)}%</span>
+                  <span
+                    className="h-2 w-16 rounded-sm"
+                    style={{
+                      background: `linear-gradient(to right, ${COVERAGE_RAMP.join(', ')})`,
+                    }}
+                  />
+                  <span>{Math.round(coverageMax)}%</span>
+                </div>
+              )}
+            </div>
           </div>
 
           {/* SVG Map Container */}
           <div
-            className={`relative w-full flex items-center justify-center my-2 ${
+            ref={mapContainerRef}
+            className={`relative w-full flex items-center justify-center my-2 touch-none ${
               compact ? 'max-h-[340px]' : ''
             }`}
             style={{ aspectRatio: `${mapAspect}` }}
+            onPointerDown={handleMapPointerDown}
+            onPointerMove={handleMapPointerMove}
+            onPointerUp={handleMapPointerUp}
+            onPointerCancel={handleMapPointerCancel}
+            onClickCapture={handleMapClickCapture}
           >
+            <div
+              data-map-controls
+              role="group"
+              aria-label="Map zoom controls"
+              title="Drag to pan. Pinch or use the buttons to zoom."
+              className="absolute right-2 top-2 z-20 flex flex-col gap-1"
+              onPointerDown={(event) => event.stopPropagation()}
+            >
+              <button
+                type="button"
+                onClick={() => zoomAt(1.35)}
+                disabled={!canZoomIn}
+                aria-label="Zoom in"
+                title="Zoom in"
+                className="flex h-9 w-9 items-center justify-center rounded-lg border border-[#1C2E24] bg-[#070C09]/90 text-[#94A89D] backdrop-blur transition hover:border-emerald-500/40 hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                <ZoomIn className="w-4 h-4" />
+              </button>
+              <button
+                type="button"
+                onClick={() => zoomAt(1 / 1.35)}
+                disabled={!canZoomOut}
+                aria-label="Zoom out"
+                title="Zoom out"
+                className="flex h-9 w-9 items-center justify-center rounded-lg border border-[#1C2E24] bg-[#070C09]/90 text-[#94A89D] backdrop-blur transition hover:border-emerald-500/40 hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                <ZoomOut className="w-4 h-4" />
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewBoxOverride(null)}
+                disabled={!isZoomed}
+                aria-label="Reset map zoom"
+                title="Reset map zoom"
+                className="flex h-9 w-9 items-center justify-center rounded-lg border border-[#1C2E24] bg-[#070C09]/90 text-[#94A89D] backdrop-blur transition hover:border-emerald-500/40 hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                <RotateCcw className="w-4 h-4" />
+              </button>
+            </div>
             <svg
-              viewBox={
-                geoLevel === 'state'
-                  ? NIGERIA_MAP_VIEWBOX
-                  : lgaViewBox
-              }
+              viewBox={activeViewBoxString}
               role="region"
               aria-label="National Presidential Results Map of Nigeria"
               className="w-full h-full drop-shadow-2xl select-none"
@@ -816,6 +1197,23 @@ export const NigeriaHeatMap: React.FC<NigeriaHeatMapProps> = ({
                             strokeWidth={1.5}
                             strokeDasharray="4 2"
                           />
+                        )}
+                        {(showLgaLabels || isSelected) && (
+                          <text
+                            x={geom.labelX}
+                            y={geom.labelY}
+                            textAnchor="middle"
+                            dominantBaseline="middle"
+                            fontSize={isSelected ? 4.2 : 2.8}
+                            fontWeight="bold"
+                            fill={isSelected ? '#FDE047' : '#FFFFFF'}
+                            stroke="#040B06"
+                            strokeWidth={isSelected ? 0.9 : 0.6}
+                            paintOrder="stroke"
+                            style={{ pointerEvents: 'none' }}
+                          >
+                            {lga.name.replace(/ LGA$/, '')}
+                          </text>
                         )}
                       </g>
                     );
@@ -992,14 +1390,14 @@ export const NigeriaHeatMap: React.FC<NigeriaHeatMapProps> = ({
           <div className="grid grid-cols-3 gap-2 pt-3 border-t border-[#142D1E] text-center">
             <div>
               <p className="text-[10px] text-[#718579] uppercase font-bold">Reporting Progress</p>
-              <p className="text-xs font-black text-emerald-400">{overallReportingPct}%</p>
+              <p className="text-xs font-black text-emerald-400">{scopeReportingPct}%</p>
             </div>
             <div>
-              <p className="text-[10px] text-[#718579] uppercase font-bold">Total Votes Cast</p>
-              <p className="text-xs font-black text-white">{totalVotesAcrossAll.toLocaleString()}</p>
+              <p className="text-[10px] text-[#718579] uppercase font-bold">Valid Votes</p>
+              <p className="text-xs font-black text-white">{scopeVotes.toLocaleString()}</p>
             </div>
             <div>
-              <p className="text-[10px] text-[#718579] uppercase font-bold">Leaderboard Lead</p>
+              <p className="text-[10px] text-[#718579] uppercase font-bold">Selected Unit Lead</p>
               <p
                 className="text-xs font-black"
                 style={{
@@ -1406,10 +1804,10 @@ export const NigeriaHeatMap: React.FC<NigeriaHeatMapProps> = ({
                       </span>
                     </div>
 
-                    {/* Collation Progress Bar */}
+                    {/* Reporting Progress Bar */}
                     <div className="space-y-1">
                       <div className="flex items-center justify-between text-[10px] text-[#718579]">
-                        <span className="font-semibold">Collation Progress</span>
+                        <span className="font-semibold">Reporting Progress</span>
                         <span className="font-bold text-emerald-400">
                           {lga.reportingPct}%
                         </span>
@@ -1498,12 +1896,12 @@ export const NigeriaHeatMap: React.FC<NigeriaHeatMapProps> = ({
               </button>
             </div>
 
-            {/* Collation Progress Bar Strip */}
+            {/* Reporting Progress Bar Strip */}
             <div className="bg-[#080E0A] border border-[#1C2E24] p-4 rounded-2xl space-y-3">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold text-[#718579] uppercase tracking-wider flex items-center gap-1.5">
                   <BarChart3 className="w-3.5 h-3.5 text-emerald-400" />
-                  Polling Unit Collation Returns
+                  Reporting Progress
                 </span>
                 <span className="text-sm font-black text-emerald-400">
                   {inspectModalUnit.reportingPct}% Complete
@@ -1520,11 +1918,11 @@ export const NigeriaHeatMap: React.FC<NigeriaHeatMapProps> = ({
               <div className="flex items-center justify-between text-xs text-[#94A89D]">
                 <span>
                   <strong>{inspectModalUnit.baseCollated.toLocaleString()}</strong> of{' '}
-                  <strong>{inspectModalUnit.totalPus.toLocaleString()}</strong> PUs Officially Collated
+                  <strong>{inspectModalUnit.totalPus.toLocaleString()}</strong> polling units reported
                 </span>
                 <span className="text-emerald-400 font-semibold flex items-center gap-1">
                   <CheckCircle2 className="w-3.5 h-3.5" />
-                  INEC Verified
+                  {dataSource === 'INEC' ? 'INEC Declared' : 'Observed Returns'}
                 </span>
               </div>
             </div>
@@ -1539,7 +1937,7 @@ export const NigeriaHeatMap: React.FC<NigeriaHeatMapProps> = ({
             >
               <div>
                 <span className="text-[10px] font-black uppercase tracking-wider text-[#718579] block">
-                  Projected Leader
+                  Leading Candidate
                 </span>
                 <h4 className="text-base font-black text-white mt-0.5">
                   {inspectModalUnit.leadingCandidate}
@@ -1564,7 +1962,7 @@ export const NigeriaHeatMap: React.FC<NigeriaHeatMapProps> = ({
             {/* Comprehensive Party Vote Distribution with Full-Size Bars */}
             <div className="space-y-2.5">
               <h4 className="text-xs font-extrabold uppercase tracking-wider text-[#718579]">
-                Candidate & Party Distribution ({inspectModalUnit.totalVotes.toLocaleString()} Total Votes)
+                Candidate & Party Distribution ({inspectModalUnit.totalVotes.toLocaleString()} Valid Votes)
               </h4>
 
               <div className="space-y-2">

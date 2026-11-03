@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useAppStore } from '../store';
 import { electionService } from '../services/electionService';
+import { TOTAL_LGAS, TOTAL_POLLING_UNITS, TOTAL_STATES, TOTAL_WARDS } from '../constants';
 import {
   MapPin,
   Search,
@@ -63,7 +64,9 @@ export const LocationsView: React.FC = () => {
         <div>
           <h1 className="text-xl font-extrabold text-white">Electoral Hierarchy &amp; Geography</h1>
           <p className="text-xs text-[#718579]">
-            36 States + FCT, 774 Local Government Areas, 8,809 Electoral Wards, and 176,846 Polling Units
+            {TOTAL_STATES} States + FCT, {TOTAL_LGAS} Local Government Areas,{' '}
+            {TOTAL_WARDS.toLocaleString()} Electoral Wards, and{' '}
+            {TOTAL_POLLING_UNITS.toLocaleString()} Polling Units
           </p>
         </div>
 

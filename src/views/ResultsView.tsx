@@ -105,7 +105,6 @@ export const ResultsView: React.FC = () => {
           </span>
           <div className="flex items-baseline gap-2 mt-1">
             <span className="text-2xl font-black text-white font-mono">{visibleResults.length}</span>
-            <span className="text-xs text-[#10B981] font-semibold">100% Ingestion</span>
           </div>
         </Card>
 
@@ -117,7 +116,7 @@ export const ResultsView: React.FC = () => {
             <span className="text-2xl font-black text-white font-mono">
               {visibleResults.reduce((sum, r) => sum + r.totalAccreditedVoters, 0).toLocaleString()}
             </span>
-            <span className="text-xs text-[#718579]">BVAS verified</span>
+            <span className="text-xs text-[#718579]">from returns</span>
           </div>
         </Card>
 
@@ -129,7 +128,7 @@ export const ResultsView: React.FC = () => {
             <span className="text-2xl font-black text-[#10B981] font-mono">
               {visibleResults.reduce((sum, r) => sum + r.totalVotesCast, 0).toLocaleString()}
             </span>
-            <span className="text-xs text-[#10B981] font-semibold">Valid</span>
+            <span className="text-xs text-[#10B981] font-semibold">ballots</span>
           </div>
         </Card>
 
